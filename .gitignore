@@ -1,0 +1,30 @@
+# Terraform local state and temp files
+**/.terraform/*
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Local variable files with real/sensitive values (keep example.tfvars tracked)
+*.auto.tfvars
+*.auto.tfvars.json
+terraform.tfvars
+terraform.tfvars.json
+
+# Terraform plan output and lock info
+*.tfplan
+tfplan
+.terraform.tfstate.lock.info
+
+# Terraform state backups
+*.tfstate.backup
+
+# Log files (terraform apply output, etc.)
+*.log
