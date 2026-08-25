@@ -1,0 +1,39 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.16/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.16",
+  "version": "2.0.1",
+  "id": "9d832c40-cc8b-4a09-9ed6-e63345591c77",
+  "packageName": "com.microsoft.teams.tennis.coach",
+  "developer": {
+    "name": "Chris Wilke",
+    "websiteUrl": "https://example.com",
+    "privacyUrl": "https://example.com",
+    "termsOfUseUrl": "https://example.com"
+  },
+  "name": {
+    "short": "Tennis Coach",
+    "full": "Your Personal Tennis Coach"
+  },
+  "description": {
+    "short": "AI-powered tennis coaching agent",
+    "full": "Get personalized tennis coaching advice from an AI agent"
+  },
+  "icons": {
+    "color": "default-color-icon.png",
+    "outline": "default-outline-icon.png"
+  },
+  "accentColor": "#4464ee",
+  "validDomains": [],
+  "bots": [
+    {
+      "botId": "3b9d4a32-20a4-44e3-b62a-46087da55e72",
+      "scopes": [
+        "personal",
+        "team",
+        "groupChat"
+      ],
+      "supportsFiles": false,
+      "isNotificationOnly": false
+    }
+  ]
+}
