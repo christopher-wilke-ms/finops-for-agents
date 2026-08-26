@@ -351,36 +351,28 @@ def messages():
     print(f"[MESSAGE] Calling Foundry agent with message: {user_message}")
     agent_response, agent_metadata = call_foundry_agent(user_message, user_metadata)
 
-    # Build response with user info and agent response
+    # Build response in the requested format
     response_text = f"""**User Information:**
 - Name: {user_from.get('name', 'N/A')}
 - Email: {graph_user_info.get('mail', 'N/A')}
-- Department: {graph_user_info.get('department', 'N/A')}"""
-
-    # Add more details if available
-    if graph_user_info and graph_user_info.get('mail') != 'N/A':
-        response_text += f"""
+- Department: {graph_user_info.get('department', 'N/A')}
 - Office Location: {graph_user_info.get('officeLocation', 'N/A')}
-- Mobile Phone: {graph_user_info.get('mobilePhone', 'N/A')}"""
 
-    response_text += f"""
-
-**Your Request:**
-{user_message}
-
-**Agent Response:**
-{agent_response}
-
-**Agent Metadata:**
+**Agent Response Metadata:**
 - Model: {agent_metadata.get('model', 'N/A')}
 - Agent: {agent_metadata.get('agent_name', 'N/A')} (v{agent_metadata.get('agent_version', 'N/A')})
 - Input Tokens: {agent_metadata.get('input_tokens', 0):,}
 - Output Tokens: {agent_metadata.get('output_tokens', 0):,}
-  - Reasoning Tokens: {agent_metadata.get('reasoning_tokens', 0):,}
 - Total Tokens: {agent_metadata.get('total_tokens', 0):,}
 - Created At: {agent_metadata.get('created_at', 'N/A')}
 - Completed At: {agent_metadata.get('completed_at', 'N/A')}
-- Processing Time: {agent_metadata.get('processing_time_seconds', 0)} seconds"""
+- Processing Time: {agent_metadata.get('processing_time_seconds', 0)} seconds
+
+**Final Request:**
+{user_message}
+
+**Final Agent Response:**
+{agent_response}"""
 
     # Get token for response
     token = get_access_token_manual()

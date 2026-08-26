@@ -134,35 +134,171 @@ Teams Message
 [Report] Cost dashboard and chargeback reports
 ```
 
-## Development & Deployment
+## Running the Solution Locally
 
-### Local Development
+### Prerequisites
+- Python 3.11+
+- Azure subscription with Foundry project
+- Foundry agent created: `super-fun-coding-learn-agent`
+- Azure Bot Service app registered (App ID: `3b9d4a32-20a4-44e3-b62a-46087da55e72`)
+- Azure CLI or devtunnel CLI installed
+- RBAC "Foundry Agent Consumer" role assigned to app registration on Foundry project
+
+### Step 1: Set Up Python Environment
+
 ```bash
-# Set up environment
 cd code
+
+# Create virtual environment (Python 3.11)
 python3.11 -m venv venv
-source venv/bin/activate
+
+# Activate virtual environment
+source venv/bin/activate  # macOS/Linux
+# or
+venv\Scripts\activate     # Windows
+
+# Install dependencies
 pip install -r requirements.txt
-
-# Configure
-cp .env.example .env  # Add Bot App ID and Password
-
-# Run locally
-python bot_service.py
-
-# Expose to internet
-azd dev tunnel start
 ```
 
-### Cloud Deployment
+### Step 2: Configure Environment Variables
+
 ```bash
-# Deploy infrastructure
-cd ../infra
-terraform init
-terraform apply -var-file=terraform.tfvars
-
-# Deploy bot service (Azure App Service or Container Apps)
-# Configure Azure Bot Service to use Foundry agent endpoint
+# Create .env file with your credentials
+cat > .env << EOF
+BOT_APP_ID=3b9d4a32-20a4-44e3-b62a-46087da55e72
+BOT_APP_PASSWORD=<your-bot-app-password>
+EOF
 ```
+
+### Step 3: Run Bot Service Locally
+
+```bash
+python bot_service.py
+```
+
+Expected output:
+```
+[INIT] Bot App ID: 3b9d4a32-20a4-44e3-b62a-46087da55e72
+[INIT] Bot App Password: **********...
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:3978
+```
+
+### Step 4: Expose to Internet with DevTunnel
+
+**In a new terminal:**
+
+```bash
+# Install devtunnel if needed
+az dev tunnel create --allow-anonymous
+
+# Start tunnel on port 3978
+devtunnel host -a -p 3978
+```
+
+Expected output:
+```
+Tunnel URL: https://xxxx-xxxxx.devtunnels.ms
+```
+
+### Step 5: Configure Azure Bot Service Endpoint
+
+1. Go to **Azure Portal**
+2. Navigate to **Azure Bot Service** → Configuration
+3. Update **Messaging endpoint** to:
+   ```
+   https://xxxx-xxxxx.devtunnels.ms/api/messages
+   ```
+4. Click **Save**
+
+### Step 6: Test in Microsoft Teams
+
+1. Open **Microsoft Teams**
+2. Go to **Chat** → **+ New Chat**
+3. Search for and add bot: `learning-python-agent`
+4. Send a test message: `"hello"`
+
+Expected Teams response:
+```
+**User Information:**
+- Name: [Your Name]
+- Email: [Your Email]
+- Department: [Your Department]
+- Office Location: [Your Office]
+
+**Agent Response Metadata:**
+- Model: gpt-5-mini
+- Agent: super-fun-coding-learn-agent (v2)
+- Input Tokens: [count]
+- Output Tokens: [count]
+- Total Tokens: [count]
+- Created At: [timestamp]
+- Completed At: [timestamp]
+- Processing Time: [seconds]
+
+**Final Request:**
+hello
+
+**Final Agent Response:**
+[Agent's response here]
+```
+
+### Monitoring & Debugging
+
+Watch the bot service terminal for logs:
+```
+[MESSAGE] Received POST to /api/messages
+[MESSAGE] User: MOD Administrator
+[GRAPH] Fetching user info from: https://graph.microsoft.com/v1.0/users/[ID]
+[GRAPH] Response status: 200
+[FOUNDRY] Calling agent at: https://aifoundry6449...
+[FOUNDRY] Response status: 200
+[FOUNDRY] Tokens - Input: 4337, Output: 515, Total: 4852
+[REPLY] Successfully sent with user info!
+```
+
+### Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `devtunnel: command not found` | Install: `az dev tunnel create --allow-anonymous` |
+| `403 Forbidden from Foundry` | Verify RBAC role assigned to app registration on Foundry project |
+| `No response in Teams` | Check bot service logs, verify endpoint URL in Bot Service config |
+| `Graph API 403 error` | Verify "Directory.Read.All" and "User.Read.All" permissions are "Granted for Contoso" |
+| `venv activation fails` | Use Python 3.11: `python3.11 -m venv venv` |
+| `Missing requirements` | Reinstall: `pip install -r requirements.txt --upgrade` |
+
+---
+
+## Cloud Deployment
+
+### Step 1: Deploy Infrastructure
+
+```bash
+cd infra
+
+# Initialize Terraform
+terraform init
+
+# Deploy to Azure (Sweden Central)
+terraform apply -var-file=terraform.tfvars
+```
+
+### Step 2: Deploy Bot Service
+
+```bash
+# Option 1: Deploy to Azure Container Apps
+azd provision
+azd deploy
+
+# Option 2: Deploy to Azure App Service
+# Create an App Service and deploy the Flask application
+```
+
+### Step 3: Update Bot Service Endpoint
+
+1. In Azure Portal, update Bot Service messaging endpoint to your deployed URL
+2. Ensure Foundry agent is configured to accept traffic from the bot service identity
 
 ---
