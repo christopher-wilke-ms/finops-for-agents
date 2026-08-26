@@ -1,0 +1,377 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finops.org/schema/agents/finops-agent-metrics-v1.0.json",
+  "title": "FinOps for Agents - Agent Metrics Record",
+  "description": "JSON Schema for FinOps cost and usage metrics for AI agent deployments, extending FOCUS 1.0 specification",
+  "type": "object",
+  "required": [
+    "BillingAccountId",
+    "BillingPeriodStart",
+    "BillingPeriodEnd",
+    "ChargePeriodStart",
+    "ChargePeriodEnd",
+    "ServiceCategory",
+    "ServiceName",
+    "ResourceId",
+    "ResourceType",
+    "ConsumedQuantity",
+    "ConsumedUnit",
+    "EffectiveCost",
+    "x_UserId",
+    "x_UserEmail",
+    "x_AgentId",
+    "x_AgentName",
+    "x_ModelId",
+    "x_InputTokens",
+    "x_OutputTokens",
+    "x_TotalTokens",
+    "x_CreatedAt",
+    "x_CompletedAt"
+  ],
+  "properties": {
+    "BillingAccountId": {
+      "type": "string",
+      "description": "Unique identifier for the billing account",
+      "examples": ["99f1582e-0660-4cdb-8dac-21d7a4752603"]
+    },
+    "BillingAccountName": {
+      "type": ["string", "null"],
+      "description": "Display name of the billing account",
+      "examples": ["Contoso FinOps Hackathon"]
+    },
+    "BillingPeriodStart": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Inclusive start date and time of billing period (ISO 8601 format)",
+      "examples": ["2026-08-01T00:00:00Z"]
+    },
+    "BillingPeriodEnd": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Exclusive end date and time of billing period (ISO 8601 format)",
+      "examples": ["2026-08-31T23:59:59Z"]
+    },
+    "BillingCurrency": {
+      "type": "string",
+      "description": "Currency of the charge (ISO 4217 code)",
+      "pattern": "^[A-Z]{3}$",
+      "examples": ["USD"]
+    },
+    "ChargePeriodStart": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Inclusive start date and time of charge period (ISO 8601 format)",
+      "examples": ["2026-08-25T13:47:52Z"]
+    },
+    "ChargePeriodEnd": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Exclusive end date and time of charge period (ISO 8601 format)",
+      "examples": ["2026-08-25T13:47:57Z"]
+    },
+    "ServiceCategory": {
+      "type": "string",
+      "description": "Highest-level classification of service",
+      "examples": ["AI Services", "AI & Machine Learning"]
+    },
+    "ServiceName": {
+      "type": "string",
+      "description": "Specific AI service offering",
+      "examples": ["Microsoft Foundry", "Azure OpenAI Service"]
+    },
+    "ServiceSubcategory": {
+      "type": ["string", "null"],
+      "description": "Sub-classification of service",
+      "examples": ["AI Agents", "Language Models"]
+    },
+    "SkuId": {
+      "type": "string",
+      "description": "Unique identifier for SKU/model",
+      "examples": ["gpt-5-mini", "gpt-4-turbo"]
+    },
+    "SkuMeterName": {
+      "type": ["string", "null"],
+      "description": "Name of usage meter",
+      "examples": ["Token Processing", "API Calls"]
+    },
+    "ResourceId": {
+      "type": "string",
+      "description": "Unique identifier for the resource (agent)",
+      "examples": ["super-fun-coding-learn-agent"]
+    },
+    "ResourceName": {
+      "type": ["string", "null"],
+      "description": "Display name of the resource",
+      "examples": ["super-fun-coding-learn-agent"]
+    },
+    "ResourceType": {
+      "type": "string",
+      "description": "Type of resource",
+      "examples": ["AI Agent"]
+    },
+    "ListCost": {
+      "type": ["number", "null"],
+      "description": "Undiscounted cost (list price × quantity)",
+      "minimum": 0,
+      "examples": [0.43]
+    },
+    "ListUnitPrice": {
+      "type": ["number", "null"],
+      "description": "Public list price per unit",
+      "minimum": 0,
+      "examples": [0.000101]
+    },
+    "EffectiveCost": {
+      "type": "number",
+      "description": "Final cost after all discounts and amortization",
+      "minimum": 0,
+      "examples": [0.43]
+    },
+    "BilledCost": {
+      "type": ["number", "null"],
+      "description": "Invoiced cost before amortization",
+      "minimum": 0,
+      "examples": [0.43]
+    },
+    "ConsumedQuantity": {
+      "type": "number",
+      "description": "Total units of service consumed",
+      "minimum": 0,
+      "examples": [4816]
+    },
+    "ConsumedUnit": {
+      "type": "string",
+      "description": "Unit of measurement for consumption",
+      "examples": ["Tokens"]
+    },
+    "PricingQuantity": {
+      "type": ["number", "null"],
+      "description": "Quantity used for pricing calculation",
+      "minimum": 0,
+      "examples": [4.816]
+    },
+    "PricingUnit": {
+      "type": ["string", "null"],
+      "description": "Unit of measurement for pricing",
+      "examples": ["Thousand Tokens", "Tokens"]
+    },
+    "x_UserId": {
+      "type": "string",
+      "description": "Unique identifier for the user (AAD Object ID)",
+      "examples": ["bb21c6ed-b5d7-4d44-8814-85ba26bed1f5"]
+    },
+    "x_UserEmail": {
+      "type": "string",
+      "format": "email",
+      "description": "Email address of the user",
+      "examples": ["admin@M365CPI58152658.onmicrosoft.com"]
+    },
+    "x_UserName": {
+      "type": "string",
+      "description": "Display name of the user",
+      "examples": ["MOD Administrator"]
+    },
+    "x_UserDepartment": {
+      "type": ["string", "null"],
+      "description": "Department of the user",
+      "examples": ["Engineering", "Finance"]
+    },
+    "x_CostCenter": {
+      "type": ["string", "null"],
+      "description": "Cost center for chargeback",
+      "examples": ["ENG-001", "FIN-002"]
+    },
+    "x_TeamId": {
+      "type": ["string", "null"],
+      "description": "Team or business unit identifier",
+      "examples": ["Engineering-AI-Team"]
+    },
+    "x_ProjectId": {
+      "type": ["string", "null"],
+      "description": "Project or initiative identifier",
+      "examples": ["FinOps-Hackathon"]
+    },
+    "x_AgentId": {
+      "type": "string",
+      "description": "Unique identifier for the agent",
+      "examples": ["super-fun-coding-learn-agent"]
+    },
+    "x_AgentName": {
+      "type": "string",
+      "description": "Display name of the agent",
+      "examples": ["super-fun-coding-learn-agent"]
+    },
+    "x_AgentVersion": {
+      "type": ["string", "integer"],
+      "description": "Version of the agent deployment",
+      "examples": ["2", "v1.0.0"]
+    },
+    "x_ModelId": {
+      "type": "string",
+      "description": "Unique identifier for the AI model",
+      "examples": ["gpt-5-mini", "gpt-4-turbo"]
+    },
+    "x_ModelName": {
+      "type": ["string", "null"],
+      "description": "Display name of the AI model",
+      "examples": ["GPT-5 Mini", "GPT-4 Turbo"]
+    },
+    "x_ModelFamily": {
+      "type": ["string", "null"],
+      "description": "Family or class of the model",
+      "examples": ["OpenAI", "Anthropic"]
+    },
+    "x_InputTokens": {
+      "type": "integer",
+      "description": "Tokens consumed from the input/prompt",
+      "minimum": 0,
+      "examples": [4339]
+    },
+    "x_OutputTokens": {
+      "type": "integer",
+      "description": "Tokens generated in the response",
+      "minimum": 0,
+      "examples": [477]
+    },
+    "x_ReasoningTokens": {
+      "type": ["integer", "null"],
+      "description": "Tokens used for reasoning (if applicable)",
+      "minimum": 0,
+      "examples": [128]
+    },
+    "x_TotalTokens": {
+      "type": "integer",
+      "description": "Sum of all token types",
+      "minimum": 0,
+      "examples": [4816]
+    },
+    "x_TokensPerSecond": {
+      "type": ["number", "null"],
+      "description": "Token throughput (tokens / processing_time)",
+      "minimum": 0,
+      "examples": [963.2]
+    },
+    "x_CreatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when interaction started (ISO 8601 format)",
+      "examples": ["2026-08-25T13:47:52Z"]
+    },
+    "x_CompletedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp when interaction completed (ISO 8601 format)",
+      "examples": ["2026-08-25T13:47:57Z"]
+    },
+    "x_ProcessingTimeSeconds": {
+      "type": ["number", "null"],
+      "description": "Total time to process request in seconds",
+      "minimum": 0,
+      "examples": [5]
+    },
+    "x_RequestId": {
+      "type": ["string", "null"],
+      "description": "Unique identifier for the request",
+      "examples": ["resp_0a7542e13ef05c2f006a8d840fab988190b79fd3832e045ced"]
+    },
+    "Tags": {
+      "type": ["object", "null"],
+      "description": "Custom key-value pairs for tracking and filtering (JSON object per ECMA 404)",
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "number" },
+          { "type": "boolean" },
+          { "type": "null" }
+        ]
+      },
+      "examples": [
+        { "environment": "production", "priority": "high" }
+      ]
+    },
+    "x_InteractionType": {
+      "type": ["string", "null"],
+      "description": "Type of user-agent interaction",
+      "examples": ["Chat Message", "Scheduled Task", "API Call"]
+    },
+    "x_Channel": {
+      "type": ["string", "null"],
+      "description": "Communication channel used",
+      "examples": ["Microsoft Teams", "Slack", "Email"]
+    },
+    "RegionId": {
+      "type": ["string", "null"],
+      "description": "Azure region identifier",
+      "examples": ["swedencentral"]
+    },
+    "RegionName": {
+      "type": ["string", "null"],
+      "description": "Display name of region",
+      "examples": ["Sweden Central"]
+    },
+    "x_AvailabilityZone": {
+      "type": ["string", "null"],
+      "description": "Availability zone within region",
+      "examples": ["swedencentral-1"]
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "BillingAccountId": "99f1582e-0660-4cdb-8dac-21d7a4752603",
+      "BillingAccountName": "Contoso FinOps Hackathon",
+      "BillingPeriodStart": "2026-08-01T00:00:00Z",
+      "BillingPeriodEnd": "2026-08-31T23:59:59Z",
+      "BillingCurrency": "USD",
+      "ChargePeriodStart": "2026-08-25T13:47:52Z",
+      "ChargePeriodEnd": "2026-08-25T13:47:57Z",
+      "ServiceCategory": "AI Services",
+      "ServiceName": "Microsoft Foundry",
+      "ServiceSubcategory": "AI Agents",
+      "SkuId": "gpt-5-mini",
+      "SkuMeterName": "Token Processing",
+      "ResourceId": "super-fun-coding-learn-agent",
+      "ResourceName": "super-fun-coding-learn-agent",
+      "ResourceType": "AI Agent",
+      "ListCost": 0.43,
+      "ListUnitPrice": 0.000101,
+      "EffectiveCost": 0.43,
+      "BilledCost": 0.43,
+      "ConsumedQuantity": 4816,
+      "ConsumedUnit": "Tokens",
+      "PricingQuantity": 4.816,
+      "PricingUnit": "Thousand Tokens",
+      "x_UserId": "bb21c6ed-b5d7-4d44-8814-85ba26bed1f5",
+      "x_UserEmail": "admin@M365CPI58152658.onmicrosoft.com",
+      "x_UserName": "MOD Administrator",
+      "x_UserDepartment": "Engineering",
+      "x_CostCenter": "ENG-001",
+      "x_TeamId": "Engineering-AI-Team",
+      "x_ProjectId": "FinOps-Hackathon",
+      "x_AgentId": "super-fun-coding-learn-agent",
+      "x_AgentName": "super-fun-coding-learn-agent",
+      "x_AgentVersion": "2",
+      "x_ModelId": "gpt-5-mini",
+      "x_ModelName": "GPT-5 Mini",
+      "x_ModelFamily": "OpenAI",
+      "x_InputTokens": 4339,
+      "x_OutputTokens": 477,
+      "x_ReasoningTokens": 128,
+      "x_TotalTokens": 4816,
+      "x_TokensPerSecond": 963.2,
+      "x_CreatedAt": "2026-08-25T13:47:52Z",
+      "x_CompletedAt": "2026-08-25T13:47:57Z",
+      "x_ProcessingTimeSeconds": 5,
+      "x_RequestId": "resp_0a7542e13ef05c2f006a8d840fab988190b79fd3832e045ced",
+      "Tags": {
+        "environment": "production",
+        "priority": "high"
+      },
+      "x_InteractionType": "Chat Message",
+      "x_Channel": "Microsoft Teams",
+      "RegionId": "swedencentral",
+      "RegionName": "Sweden Central",
+      "x_AvailabilityZone": "swedencentral-1"
+    }
+  ]
+}

@@ -27,3 +27,30 @@ output "aisearch_name" {
   description = "AI Search service name"
   value       = azapi_resource.ai_search.name
 }
+
+output "application_insights_instrumentation_key" {
+  description = "Application Insights instrumentation key for FinOps metrics"
+  value       = azurerm_application_insights.finops.instrumentation_key
+  sensitive   = true
+}
+
+output "application_insights_connection_string" {
+  description = "Application Insights connection string for FinOps metrics"
+  value       = azurerm_application_insights.finops.connection_string
+  sensitive   = true
+}
+
+output "log_analytics_workspace_id" {
+  description = "Log Analytics workspace ID for querying FinOps metrics"
+  value       = azurerm_log_analytics_workspace.logs.id
+}
+
+output "log_analytics_workspace_name" {
+  description = "Log Analytics workspace name for KQL queries"
+  value       = azurerm_log_analytics_workspace.logs.name
+}
+
+output "resource_group_name" {
+  description = "Resource group name"
+  value       = azurerm_resource_group.rg.name
+}

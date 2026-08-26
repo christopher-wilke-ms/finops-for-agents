@@ -17,7 +17,7 @@ resource "azurerm_resource_group" "rg" {
   location = var.location
 }
 
-########## Create Log Analytics for monitoring
+########## Create Log Analytics for monitoring and FinOps metrics
 ##########
 
 resource "azurerm_log_analytics_workspace" "logs" {
@@ -25,7 +25,18 @@ resource "azurerm_log_analytics_workspace" "logs" {
   location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
   sku                 = "PerGB2018"
-  retention_in_days   = 30
+  retention_in_days   = 90
+}
+
+########## Create Application Insights for FinOps metrics
+##########
+
+resource "azurerm_application_insights" "finops" {
+  name                = "appinsights-finops-${random_string.unique.result}"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  application_type    = "web"
+  workspace_id        = azurerm_log_analytics_workspace.logs.id
 }
 
 ########## Create storage and data services
