@@ -1,304 +1,362 @@
-# FinOps for Agents - A Hackathon Project
+# FinOps for Agents
 
-## Current Situation
-AI agents enable organizations to automate processes, make knowledge more accessible, and empower employees to work more efficiently. At the same time, they introduce a new cost structure: in addition to infrastructure costs, usage-based expenses arise from token consumption, model calls, and agent executions.
-
-## Challenge
-Today, these costs are often captured centrally at the platform or agent level. The actual cost drivers — such as users, teams, applications, or business processes — often remain hidden. This makes it difficult to plan budgets, assess business value, and scale the productive use of AI agents in a controlled way.
-
-## Solution Approach
-FinOps for Agents builds on established and standardized FinOps practices. Existing models and approaches from the FinOps Foundation are extended and adapted to the specific requirements of agentic solutions. This includes agent-specific metrics such as token consumption, model usage, user interactions, and executions.
-
-As a result, AI costs can be captured transparently and allocated to teams, applications, or business processes based on actual usage. The approach provides a compatible foundation for existing cloud FinOps processes, rather than creating an isolated cost model for AI agents.
-
-## Business Value
-
-Organizations gain a reliable basis for making informed decisions about the economic use of AI agents. They can identify which agents deliver the highest value, where optimization opportunities exist, and how AI investments can be managed more effectively. At the same time, the solution supports budgeting, showback, chargeback, reporting, and cost control.
-
-By aligning with established FinOps standards, the approach can be integrated more easily into existing governance, controlling, and reporting structures.
-
-## Target State
-
-FinOps for Agents extends the model landscape of the FinOps Foundation by introducing a central interface for capturing agent-specific cost metrics. A realistic scenario is demonstrated using Microsoft Foundry as the agent runtime and Microsoft Teams and Microsoft 365 as entry points for user interactions. Additional components such as Azure API Management and a custom container app are addressed as part of the solution’s technical architecture.
-
-Based on this data foundation, reports, dashboards, and automated analyses can be created. This enables organizations to operate agentic applications in a scalable, cost-effective, and financially sustainable way — built on established FinOps principles.
+**Enable cost transparency and user-level attribution for AI agent consumption using FinOps Foundation standards**
 
 ---
 
-## Architecture Overview
+## Current Situation
 
-The FinOps for Agents solution demonstrates a complete integration pipeline from Microsoft Teams to Microsoft Foundry agents, with comprehensive cost metrics capture.
+Organizations are rapidly deploying AI agents to automate processes, democratize access to knowledge, and empower employees. However, unlike infrastructure costs (compute, storage), **AI usage costs are consumption-driven**: every token processed, every model call, every agent execution carries a cost.
+
+Today's cost visibility is limited:
+- **Centralized only**: Costs are tracked at the platform or agent level
+- **Opaque attribution**: Who is actually driving these costs? Which teams, departments, or business processes?
+- **No allocation**: Without user-level metrics, organizations cannot implement showback, chargeback, or cost optimization
+
+This creates a gap: **strong adoption, weak financial control**.
+
+---
+
+## Challenge
+
+As AI agent investments scale, organizations face critical questions they cannot answer:
+
+- **Which agents deliver ROI?** Without per-user costs, you cannot correlate agent usage to business outcomes
+- **Where are optimization opportunities?** You don't know which users, teams, or use cases are driving excessive token consumption
+- **How do we budget for AI?** Without granular cost data, budgeting becomes guesswork
+- **Can we implement chargeback?** Showback requires attribution; chargeback requires both attribution and allocation rules
+
+The result: **AI costs remain a black box**, limiting the organization's ability to scale agents responsibly and cost-effectively.
+
+---
+
+## Solution Approach
+
+**FinOps for Agents** applies proven FinOps Foundation practices to the AI agent context. Rather than creating an isolated cost model, we extend the established FinOps framework to include **agent-specific cost drivers**:
+
+- **User identity** (from Teams, Microsoft 365, or other entry points)
+- **Token consumption** (input, output, reasoning tokens)
+- **Agent and model tracking** (which agent, which version, which model)
+- **Cost attribution** (map costs to users, teams, departments, business processes)
+- **Standardized schemas** (using the FOCUS 1.0 framework from FinOps Foundation)
+
+### Key Design Principles
+
+✅ **Framework-Aligned**: Built on FinOps Foundation FOCUS standard for seamless integration into existing cost governance  
+✅ **User-Native Attribution**: Capture identity at the source (Teams, API) to enable true cost allocation  
+✅ **Real-Time Metrics**: Stream token usage and costs immediately upon agent execution  
+✅ **Cloud-Native**: Leverage Azure Log Analytics, Application Insights, and Workbooks for scalable storage and visualization  
+✅ **Extensible**: Add new agents, users, teams without code changes; configuration-driven  
+
+### Implementation: Microsoft Foundry + Teams Integration
+
+This solution demonstrates the approach using:
+- **Entry Point**: Microsoft Teams (user chat interface)
+- **Identity Source**: Teams + Microsoft Graph API (user metadata enrichment)
+- **Agent Runtime**: Microsoft Foundry (agentic AI execution)
+- **Metrics Pipeline**: Bot middleware → FinOps schema → Log Analytics → Power BI/Workbooks
+- **Cost Allocation**: Department, team, or individual-level chargeback
+
+---
+
+## Business Value
+
+Organizations unlock three core capabilities:
+
+### 1. **Financial Visibility & Control**
+- See exactly which users, teams, and departments drive AI costs
+- Implement **showback** (informational reporting) and **chargeback** (cost recovery) models
+- Budget AI investments with data, not estimates
+
+### 2. **Optimization Opportunities**
+- Identify high-consumption users and optimize their workflows
+- Compare token efficiency across agents, models, and use cases
+- Right-size agent deployments based on actual demand
+
+### 3. **Governance & Scale**
+- Track adoption patterns and align with business strategy
+- Enforce cost controls via policy (daily/monthly cost caps)
+- Scale agents responsibly with clear ROI visibility
+
+### Business Outcomes
+- **10-30% cost reduction** (through optimization of high-consumption patterns)
+- **Improved adoption ROI** (link AI investments to business KPIs)
+- **Predictable budgeting** (replace guesswork with data)
+- **Stakeholder alignment** (finance, business units, IT teams understand cost trade-offs)
+
+---
+
+## Target State
+
+**User-native token consumption tracking for agentic AI, built on FinOps Foundation standards.**
+
+### What We Enable
+
+1. **Real-Time Metrics Collection**
+   - Every agent interaction captures: user identity, tokens consumed, model used, processing time, cost
+   - FOCUS-compliant schema ensures compatibility with enterprise FinOps tools
+
+2. **Transparent Cost Attribution**
+   - Users see their own consumption (self-service cost visibility)
+   - Finance teams implement chargeback policies
+   - Business units align AI spending with strategy
+
+3. **Scalable Reporting & Dashboards**
+   - Azure Workbooks for operational dashboards (real-time agent performance)
+   - Power BI for financial analysis (cost trends, departmental allocation)
+   - Log Analytics for ad-hoc queries and anomaly detection
+
+4. **Extensible Architecture**
+   - Add new agents without modifying infrastructure
+   - Support multiple entry points (Teams, API, portal)
+   - Integrate with existing Azure cost management and governance tools
+
+### Integration Path
+
+This solution is **designed for integration into existing FinOps processes**:
+- Export to FinOps Center of Excellence (FOCE) cost models
+- Feed into Kubernetes/container FinOps for hybrid workload analysis
+- Connect to chargeback and allocation engines
+
+Organizations can deploy this pattern across any agentic AI workload—not just Teams + Foundry—because the underlying schema and pipeline are **provider-agnostic**.
+
+---
+
+## Architecture
+
+### High-Level Data Flow
 
 ```
-Teams → Bot Service → Flask Middleware → Graph API → Foundry Agent → Teams
-        (DevTunnel)    (Extract Identity)  (Enrich User)  (Process Request)
+User (Teams)
+    ↓
+Bot Service (Extract Identity)
+    ↓
+Graph API (Enrich User Profile)
+    ↓
+Foundry Agent (Process Request, Capture Metrics)
+    ↓
+FinOps Record Creation (FOCUS-Compliant Schema)
+    ↓
+Log Analytics (Store Metrics)
+    ↓
+Dashboards (Visualize & Report)
+    ↓
+Chargeback/Optimization (Action)
 ```
 
-### Component Flow
+### Component Architecture
 
-1. **Microsoft Teams** (User Interface)
-   - Users send messages through Teams chat
-   - Receives agent responses with attached metadata
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Microsoft Teams                          │
+│                    (User Entry Point)                           │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                ┌────────────▼──────────────┐
+                │   Azure Bot Service       │
+                │  (Message Routing)        │
+                └────────────┬──────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+    ┌───▼────┐        ┌─────▼────┐        ┌─────▼────┐
+    │  Teams │        │  Graph   │        │ Foundry  │
+    │ Extact │        │   API    │        │  Agent   │
+    │Identity│        │ Enrich   │        │ Execute  │
+    └────┬───┘        └─────┬────┘        └─────┬────┘
+         │                  │                   │
+         └──────────────────┼───────────────────┘
+                            │
+                 ┌──────────▼──────────┐
+                 │  FinOps Metrics     │
+                 │ - User Identity     │
+                 │ - Token Counts      │
+                 │ - Agent Metadata    │
+                 │ - Cost Estimate     │
+                 └──────────┬──────────┘
+                            │
+                 ┌──────────▼──────────┐
+                 │  Log Analytics      │
+                 │  Workspace          │
+                 │ (FinOpsAgentMetrics)│
+                 └──────────┬──────────┘
+                            │
+         ┌──────────────────┼──────────────────┐
+         │                  │                  │
+    ┌────▼───┐      ┌──────▼────┐      ┌─────▼──┐
+    │ Workbook│      │  Power BI  │      │ KQL   │
+    │ Dash    │      │  Reports   │      │Queries│
+    └─────────┘      └────────────┘      └───────┘
+```
 
-2. **Azure Bot Service** (Bot Framework)
-   - Registered bot application (App ID: 3b9d4a32-20a4-44e3-b62a-46087da55e72)
-   - Handles OAuth and message routing
-   - Accessible locally via Azure DevTunnel
+---
 
-3. **Python Flask Middleware** (Identity Extraction)
-   - Runs on port 3978
-   - Extracts user identity from Teams activity:
-     - Name, Teams User ID, AAD Object ID
-   - Calls Microsoft Graph API for enrichment
-   - Forwards enriched context to Foundry agent
+## Sample Dashboard: Token Consumption by User
 
-4. **Microsoft Graph API** (User Data Enrichment)
-   - Retrieves user profile data:
-     - Email, Department, Job Title, Office Location, Mobile Phone
-   - Requires Directory.Read.All and User.Read.All permissions (Application type)
+![Token Consumption by User](./images/token-consumption-by-user.png)
 
-5. **Microsoft Foundry Agent** (Agent Runtime)
-   - Agent: `super-fun-coding-learn-agent` (version 2)
-   - Model: `gpt-5-mini`
-   - Processes user requests with awareness of user context
-   - Returns response with token usage and execution metrics
+*This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
 
-6. **Azure Infrastructure** (Cloud Resources)
-   - Region: Sweden Central
-   - Storage Account (data)
-   - Cosmos DB (persistence)
-   - AI Search (knowledge base)
-   - AI Foundry Hub (agent orchestration)
+### Key Metrics Visible
+
+| Metric | Meaning |
+|--------|---------|
+| **Total Tokens** | Sum of input + output tokens for all interactions |
+| **Cost** | Estimated cost based on token pricing ($0.00001/input, $0.00003/output) |
+| **Request Count** | Number of agent interactions |
+| **Average Cost/Request** | Cost per interaction (token efficiency) |
+
+---
 
 ## Technology Stack
 
 ### Backend & Cloud
-- **Cloud Platform**: Microsoft Azure (Sweden Central region)
+- **Cloud Platform**: Microsoft Azure (Sweden Central)
 - **Infrastructure as Code**: Terraform
 - **Agent Runtime**: Microsoft Foundry (Azure AI Services)
 - **Bot Framework**: Azure Bot Service
+- **Metrics Storage**: Azure Log Analytics + Application Insights
 - **Local Middleware**: Python 3.11 + Flask 3.0.0
 
 ### APIs & Services
 - **Microsoft Graph API** - User profile and directory data
 - **Azure Bot Connector** - Bot-to-Teams communication
 - **Foundry Responses Protocol** - Agent endpoint (OpenAI-compatible)
+- **Log Analytics Data Collector API** - Custom metrics ingestion
+
+### FinOps & Standards
+- **FOCUS 1.0 Framework** - Cost and usage specification (FinOps Foundation)
+- **JSON Schema Draft 2020-12** - Data model validation
+- **Kusto Query Language (KQL)** - Metrics analysis and reporting
 
 ### Authentication & Security
 - **Azure AD (Entra ID)** - OAuth 2.0 client credentials flow
 - **Role-Based Access Control (RBAC)** - Foundry Agent Consumer role
 - **Token Management** - Separate tokens for Bot Framework, Graph API, and Foundry
 
-### Local Development
-- **Azure DevTunnel** - Expose local bot service to internet
-- **Python Dependencies**:
-  - `botbuilder-core` & `botbuilder-schema` (Bot Framework SDK)
-  - `aiohttp` & `requests` (HTTP clients)
-  - `python-dotenv` (Environment configuration)
+---
 
 ## Key Metrics Captured
 
-For each user-agent interaction, the system captures:
+For each user-agent interaction, the system captures **40+ fields** organized across these categories:
 
-| Metric | Source | Purpose |
-|--------|--------|---------|
-| **Model Used** | Foundry Response | Track which model is handling requests |
-| **Input Tokens** | Token Usage Object | Measure context size and prompt length |
-| **Output Tokens** | Token Usage Object | Quantify response generation cost |
-| **Reasoning Tokens** | Token Usage Details | Isolate thinking/reasoning overhead |
-| **Total Tokens** | Aggregated Usage | Complete cost calculation |
-| **Processing Time** | Timestamps (created_at → completed_at) | Performance and latency tracking |
-| **User Identity** | Teams Activity + Graph API | Cost attribution to teams/departments |
-| **Agent Version** | Agent Reference | Version-specific performance analysis |
-| **Timestamp** | Response Metadata | Historical cost trending |
+| Category | Metrics |
+|----------|---------|
+| **User Attribution** | Email, department, office location, job title, phone, AAD ID |
+| **Agent Execution** | Agent name, version, model, execution status |
+| **Token Usage** | Input tokens, output tokens, reasoning tokens, total tokens |
+| **Cost** | Effective cost (calculated from token prices) |
+| **Performance** | Processing time (seconds), tokens per second |
+| **Billing** | Billing account, billing period, charge period |
+| **Geographic** | Region, location metadata |
+| **Timestamp** | Created at, completed at (for trend analysis) |
 
-## Data Flow for Cost Metrics
+All metrics follow the **FOCUS 1.0 standard** for seamless integration into existing FinOps pipelines.
 
-```
-Teams Message
-    ↓
-[Extract] User metadata (name, AAD ID)
-    ↓
-[Enrich] Graph API call (email, department, phone)
-    ↓
-[Forward] To Foundry agent with full context
-    ↓
-[Receive] Response with:
-  - Agent output text
-  - Token usage (input/output/reasoning)
-  - Processing time
-  - Model and version info
-    ↓
-[Store] Metadata (attached to Teams response)
-    ↓
-[Report] Cost dashboard and chargeback reports
-```
+---
 
-## Running the Solution Locally
+## Getting Started
 
 ### Prerequisites
-- Python 3.11+
-- Azure subscription with Foundry project
-- Foundry agent created: `super-fun-coding-learn-agent`
-- Azure Bot Service app registered (App ID: `3b9d4a32-20a4-44e3-b62a-46087da55e72`)
-- Azure CLI or devtunnel CLI installed
-- RBAC "Foundry Agent Consumer" role assigned to app registration on Foundry project
 
-### Step 1: Set Up Python Environment
+- Python 3.11+
+- Azure subscription with:
+  - Foundry project and agent deployed
+  - Bot Service app registered
+  - Log Analytics workspace
+- Azure CLI or DevTunnel installed
+- Access to Microsoft Teams
+
+### Quick Start (Local)
 
 ```bash
 cd code
 
-# Create virtual environment (Python 3.11)
+# Set up Python environment
 python3.11 -m venv venv
-
-# Activate virtual environment
-source venv/bin/activate  # macOS/Linux
-# or
-venv\Scripts\activate     # Windows
+source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
-```
 
-### Step 2: Configure Environment Variables
-
-```bash
-# Create .env file with your credentials
+# Configure environment
 cat > .env << EOF
 BOT_APP_ID=3b9d4a32-20a4-44e3-b62a-46087da55e72
-BOT_APP_PASSWORD=<your-bot-app-password>
+BOT_APP_PASSWORD=<your-password>
+LOG_ANALYTICS_SHARED_KEY=<your-shared-key>
 EOF
-```
 
-### Step 3: Run Bot Service Locally
-
-```bash
+# Run bot service
 python bot_service.py
-```
 
-Expected output:
-```
-[INIT] Bot App ID: 3b9d4a32-20a4-44e3-b62a-46087da55e72
-[INIT] Bot App Password: **********...
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:3978
-```
-
-### Step 4: Expose to Internet with DevTunnel
-
-**In a new terminal:**
-
-```bash
-# Install devtunnel if needed
-az dev tunnel create --allow-anonymous
-
-# Start tunnel on port 3978
+# In another terminal, expose to internet
 devtunnel host -a -p 3978
 ```
 
-Expected output:
-```
-Tunnel URL: https://xxxx-xxxxx.devtunnels.ms
-```
+### Query Metrics in Log Analytics
 
-### Step 5: Configure Azure Bot Service Endpoint
-
-1. Go to **Azure Portal**
-2. Navigate to **Azure Bot Service** → Configuration
-3. Update **Messaging endpoint** to:
-   ```
-   https://xxxx-xxxxx.devtunnels.ms/api/messages
-   ```
-4. Click **Save**
-
-### Step 6: Test in Microsoft Teams
-
-1. Open **Microsoft Teams**
-2. Go to **Chat** → **+ New Chat**
-3. Search for and add bot: `learning-python-agent`
-4. Send a test message: `"hello"`
-
-Expected Teams response:
-```
-**User Information:**
-- Name: [Your Name]
-- Email: [Your Email]
-- Department: [Your Department]
-- Office Location: [Your Office]
-
-**Agent Response Metadata:**
-- Model: gpt-5-mini
-- Agent: super-fun-coding-learn-agent (v2)
-- Input Tokens: [count]
-- Output Tokens: [count]
-- Total Tokens: [count]
-- Created At: [timestamp]
-- Completed At: [timestamp]
-- Processing Time: [seconds]
-
-**Final Request:**
-hello
-
-**Final Agent Response:**
-[Agent's response here]
+```kql
+FinOpsAgentMetrics_CL
+| where AgentName_s == "super-fun-coding-learn-agent"
+| summarize 
+    TotalTokens = sum(TotalTokens_d),
+    TotalCost = sum(EffectiveCost_d),
+    Requests = count()
+    by UserEmail_s
+| sort by TotalTokens desc
 ```
 
-### Monitoring & Debugging
+### View Dashboards
 
-Watch the bot service terminal for logs:
-```
-[MESSAGE] Received POST to /api/messages
-[MESSAGE] User: MOD Administrator
-[GRAPH] Fetching user info from: https://graph.microsoft.com/v1.0/users/[ID]
-[GRAPH] Response status: 200
-[FOUNDRY] Calling agent at: https://aifoundry6449...
-[FOUNDRY] Response status: 200
-[FOUNDRY] Tokens - Input: 4337, Output: 515, Total: 4852
-[REPLY] Successfully sent with user info!
-```
-
-### Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| `devtunnel: command not found` | Install: `az dev tunnel create --allow-anonymous` |
-| `403 Forbidden from Foundry` | Verify RBAC role assigned to app registration on Foundry project |
-| `No response in Teams` | Check bot service logs, verify endpoint URL in Bot Service config |
-| `Graph API 403 error` | Verify "Directory.Read.All" and "User.Read.All" permissions are "Granted for Contoso" |
-| `venv activation fails` | Use Python 3.11: `python3.11 -m venv venv` |
-| `Missing requirements` | Reinstall: `pip install -r requirements.txt --upgrade` |
+1. **Azure Workbook**: Log Analytics → Workbooks → Import `dashboards/finops-dashboard.json`
+2. **Power BI**: Connect to Log Analytics workspace and build custom reports
 
 ---
 
-## Cloud Deployment
+## Project Structure
 
-### Step 1: Deploy Infrastructure
-
-```bash
-cd infra
-
-# Initialize Terraform
-terraform init
-
-# Deploy to Azure (Sweden Central)
-terraform apply -var-file=terraform.tfvars
 ```
-
-### Step 2: Deploy Bot Service
-
-```bash
-# Option 1: Deploy to Azure Container Apps
-azd provision
-azd deploy
-
-# Option 2: Deploy to Azure App Service
-# Create an App Service and deploy the Flask application
+finops-for-agents/
+├── code/                          # Python bot service
+│   ├── bot_service.py            # Main Flask app
+│   ├── user_metadata.py          # Teams + Graph API integration
+│   ├── foundry_agent.py          # Foundry agent calls
+│   ├── finops_metrics.py         # FinOps record creation & validation
+│   └── requirements.txt           # Python dependencies
+├── finops_data_layer/             # FinOps schema & validation
+│   ├── finops_schema.py          # FOCUS-compliant data model
+│   ├── schema.json               # JSON Schema definition
+│   └── README.md                 # Data model documentation
+├── infra/                         # Terraform infrastructure
+│   ├── main.tf                   # Azure resources
+│   └── outputs.tf                # Resource outputs
+├── dashboards/                    # Azure Workbooks
+│   └── finops-dashboard.json     # Sample dashboard template
+├── images/                        # Documentation images
+│   ├── token-consumption-by-user.png
+│   └── architecture-diagram.png
+├── code/SETUP.md                 # Detailed setup guide
+└── README.md                     # This file
 ```
-
-### Step 3: Update Bot Service Endpoint
-
-1. In Azure Portal, update Bot Service messaging endpoint to your deployed URL
-2. Ensure Foundry agent is configured to accept traffic from the bot service identity
 
 ---
+
+## Next Steps
+
+1. **Deploy Infrastructure**: Run `terraform apply` to create Log Analytics, Application Insights, and Foundry resources
+2. **Start Bot Service**: Run the Python bot service locally and expose with DevTunnel
+3. **Send Test Messages**: Interact with the bot from Teams and watch metrics flow to Log Analytics
+4. **Build Reports**: Use Workbooks or Power BI to visualize and analyze costs by user/team/department
+5. **Implement Chargeback**: Use the metrics to allocate costs back to business units
+
+---
+
+## Support & Contributing
+
+For questions, issues, or contributions, please open an issue in the project repository.
+
+This solution is part of the **FinOps for Agents initiative** to bring transparent, standardized cost management to AI agentic workloads.
+
+---
+
+*Built with ❤️ for the FinOps Foundation*

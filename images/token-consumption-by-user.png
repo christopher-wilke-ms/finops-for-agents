@@ -1,0 +1,86 @@
+<!-- Token Consumption by User - Sample Chart -->
+<!-- This is an SVG representation of the dashboard showing token consumption -->
+<!-- Created for FinOps for Agents documentation -->
+
+<svg width="1000" height="500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1000" height="500" fill="#f8f9fa"/>
+
+  <!-- Title -->
+  <text x="50" y="40" font-size="24" font-weight="bold" fill="#1f2937">Token Consumption by User</text>
+  <text x="50" y="65" font-size="14" fill="#6b7280">super-fun-coding-learn-agent (Last 7 days)</text>
+
+  <!-- Y-axis -->
+  <line x1="80" y1="80" x2="80" y2="430" stroke="#d1d5db" stroke-width="2"/>
+
+  <!-- X-axis -->
+  <line x1="80" y1="430" x2="950" y2="430" stroke="#d1d5db" stroke-width="2"/>
+
+  <!-- Y-axis labels -->
+  <text x="20" y="435" text-anchor="end" font-size="12" fill="#6b7280">0</text>
+  <text x="20" y="315" text-anchor="end" font-size="12" fill="#6b7280">5K</text>
+  <text x="20" y="195" text-anchor="end" font-size="12" fill="#6b7280">10K</text>
+  <text x="20" y="85" text-anchor="end" font-size="12" fill="#6b7280">15K</text>
+
+  <!-- Grid lines -->
+  <line x1="80" y1="315" x2="950" y2="315" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="5,5"/>
+  <line x1="80" y1="195" x2="950" y2="195" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="5,5"/>
+
+  <!-- Bar Chart Data -->
+  <!-- User 1: admin@M365CPI58152658.onmicrosoft.com - 14,852 tokens -->
+  <rect x="110" y="125" width="60" height="305" fill="#3b82f6" rx="4"/>
+  <text x="140" y="450" text-anchor="middle" font-size="11" fill="#374151">admin@...</text>
+  <text x="140" y="465" text-anchor="middle" font-size="10" fill="#6b7280">14.8K</text>
+
+  <!-- User 2: john.doe@company.com - 9,284 tokens -->
+  <rect x="200" y="225" width="60" height="205" fill="#3b82f6" rx="4"/>
+  <text x="230" y="450" text-anchor="middle" font-size="11" fill="#374151">john.doe@...</text>
+  <text x="230" y="465" text-anchor="middle" font-size="10" fill="#6b7280">9.3K</text>
+
+  <!-- User 3: sarah.smith@company.com - 7,156 tokens -->
+  <rect x="290" y="275" width="60" height="155" fill="#3b82f6" rx="4"/>
+  <text x="320" y="450" text-anchor="middle" font-size="11" fill="#374151">sarah.smith@...</text>
+  <text x="320" y="465" text-anchor="middle" font-size="10" fill="#6b7280">7.2K</text>
+
+  <!-- User 4: michael.johnson@company.com - 5,923 tokens -->
+  <rect x="380" y="325" width="60" height="105" fill="#3b82f6" rx="4"/>
+  <text x="410" y="450" text-anchor="middle" font-size="11" fill="#374151">michael.j@...</text>
+  <text x="410" y="465" text-anchor="middle" font-size="10" fill="#6b7280">5.9K</text>
+
+  <!-- User 5: emily.wilson@company.com - 4,445 tokens -->
+  <rect x="470" y="360" width="60" height="70" fill="#3b82f6" rx="4"/>
+  <text x="500" y="450" text-anchor="middle" font-size="11" fill="#374151">emily.w@...</text>
+  <text x="500" y="465" text-anchor="middle" font-size="10" fill="#6b7280">4.4K</text>
+
+  <!-- User 6: david.brown@company.com - 3,127 tokens -->
+  <rect x="560" y="392" width="60" height="38" fill="#3b82f6" rx="4"/>
+  <text x="590" y="450" text-anchor="middle" font-size="11" fill="#374151">david.b@...</text>
+  <text x="590" y="465" text-anchor="middle" font-size="10" fill="#6b7280">3.1K</text>
+
+  <!-- Metrics box -->
+  <rect x="700" y="100" width="230" height="300" fill="white" stroke="#d1d5db" stroke-width="1" rx="4"/>
+
+  <text x="720" y="130" font-size="12" font-weight="bold" fill="#1f2937">Key Metrics</text>
+
+  <text x="720" y="160" font-size="11" fill="#6b7280">Total Tokens:</text>
+  <text x="800" y="160" font-size="13" font-weight="bold" fill="#1f2937">44.8K</text>
+
+  <text x="720" y="190" font-size="11" fill="#6b7280">Total Cost:</text>
+  <text x="800" y="190" font-size="13" font-weight="bold" fill="#059669">$1,344</text>
+
+  <text x="720" y="220" font-size="11" fill="#6b7280">Request Count:</text>
+  <text x="800" y="220" font-size="13" font-weight="bold" fill="#1f2937">127</text>
+
+  <text x="720" y="250" font-size="11" fill="#6b7280">Top User Cost:</text>
+  <text x="800" y="250" font-size="13" font-weight="bold" fill="#dc2626">$445.56</text>
+
+  <text x="720" y="280" font-size="11" fill="#6b7280">Avg Cost/User:</text>
+  <text x="800" y="280" font-size="13" font-weight="bold" fill="#1f2937">$224</text>
+
+  <text x="720" y="310" font-size="11" fill="#6b7280">Model:</text>
+  <text x="800" y="310" font-size="11" fill="#1f2937">gpt-5-mini</text>
+
+  <text x="720" y="340" font-size="11" fill="#6b7280">Pricing:</text>
+  <text x="800" y="340" font-size="11" fill="#1f2937">$0.00001/input</text>
+  <text x="800" y="355" font-size="11" fill="#1f2937">$0.00003/output</text>
+</svg>

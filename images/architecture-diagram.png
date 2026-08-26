@@ -1,0 +1,154 @@
+<!-- FinOps for Agents - Architecture Diagram -->
+<!-- Complete end-to-end data flow and component architecture -->
+
+<svg width="1200" height="900" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <style>
+      .box { stroke: #1f2937; stroke-width: 2; }
+      .user-entry { fill: #e0e7ff; }
+      .middleware { fill: #fef3c7; }
+      .cloud { fill: #d1fae5; }
+      .data { fill: #f3e8ff; }
+      .viz { fill: #dbeafe; }
+      .label { font-size: 12px; font-weight: bold; fill: #1f2937; }
+      .small-text { font-size: 10px; fill: #6b7280; }
+      .arrow { stroke: #374151; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#374151" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="600" y="35" font-size="28" font-weight="bold" text-anchor="middle" fill="#1f2937">FinOps for Agents - Complete Architecture</text>
+
+  <!-- LAYER 1: USER ENTRY POINT -->
+  <text x="50" y="80" font-size="14" font-weight="bold" fill="#1f2937">Layer 1: User Entry Point</text>
+
+  <rect x="100" y="100" width="180" height="80" class="box user-entry" rx="8"/>
+  <text x="190" y="125" text-anchor="middle" class="label">Microsoft Teams</text>
+  <text x="190" y="145" text-anchor="middle" class="small-text">User Messages</text>
+  <text x="190" y="160" text-anchor="middle" class="small-text">Chat Interface</text>
+
+  <!-- LAYER 2: MIDDLEWARE -->
+  <text x="50" y="220" font-size="14" font-weight="bold" fill="#1f2937">Layer 2: Identity & Enrichment (Middleware)</text>
+
+  <!-- Bot Service -->
+  <rect x="100" y="240" width="160" height="100" class="box middleware" rx="8"/>
+  <text x="180" y="265" text-anchor="middle" class="label">Bot Service</text>
+  <text x="180" y="285" text-anchor="middle" class="small-text">Flask (Python)</text>
+  <text x="180" y="300" text-anchor="middle" class="small-text">Extract Identity</text>
+  <text x="180" y="315" text-anchor="middle" class="small-text">Route Messages</text>
+
+  <!-- Graph API -->
+  <rect x="330" y="240" width="160" height="100" class="box middleware" rx="8"/>
+  <text x="410" y="265" text-anchor="middle" class="label">Graph API</text>
+  <text x="410" y="285" text-anchor="middle" class="small-text">User Profile</text>
+  <text x="410" y="300" text-anchor="middle" class="small-text">Email, Department</text>
+  <text x="410" y="315" text-anchor="middle" class="small-text">Office Location</text>
+
+  <!-- Arrows -->
+  <path d="M 280 290 L 330 290" class="arrow"/>
+  <text x="305" y="280" text-anchor="middle" class="small-text">enrich</text>
+
+  <!-- LAYER 3: AGENT EXECUTION -->
+  <text x="50" y="400" font-size="14" font-weight="bold" fill="#1f2937">Layer 3: Agent Execution & Metrics Capture</text>
+
+  <rect x="100" y="420" width="390" height="120" class="box cloud" rx="8"/>
+  <text x="295" y="445" text-anchor="middle" class="label">Microsoft Foundry Agent</text>
+  <text x="295" y="465" text-anchor="middle" class="small-text">Agent: super-fun-coding-learn-agent (v2)</text>
+  <text x="295" y="480" text-anchor="middle" class="small-text">Model: gpt-5-mini</text>
+
+  <text x="120" y="510" class="small-text">✓ Process user query</text>
+  <text x="120" y="525" class="small-text">✓ Return response</text>
+  <text x="280" y="510" class="small-text">✓ Capture token counts</text>
+  <text x="280" y="525" class="small-text">✓ Track execution time</text>
+
+  <path d="M 280 240 L 295 420" class="arrow"/>
+  <text x="270" y="330" text-anchor="middle" class="small-text">with context</text>
+
+  <!-- LAYER 4: FINOPS RECORD CREATION -->
+  <text x="50" y="610" font-size="14" font-weight="bold" fill="#1f2937">Layer 4: FinOps Record Creation (FOCUS Standard)</text>
+
+  <rect x="100" y="630" width="390" height="100" class="box data" rx="8"/>
+  <text x="295" y="655" text-anchor="middle" class="label">FinOps Metrics Record</text>
+
+  <text x="120" y="680" class="small-text">• User ID, Email, Department</text>
+  <text x="120" y="695" class="small-text">• Input/Output/Reasoning Tokens</text>
+  <text x="280" y="680" class="small-text">• Agent Name & Version</text>
+  <text x="280" y="695" class="small-text">• Estimated Cost (USD)</text>
+  <text x="120" y="710" class="small-text">• Processing Time (ms)</text>
+  <text x="280" y="710" class="small-text">• Timestamp & Request ID</text>
+
+  <path d="M 295 540 L 295 630" class="arrow"/>
+
+  <!-- LAYER 5: STORAGE & ANALYTICS -->
+  <text x="50" y="800" font-size="14" font-weight="bold" fill="#1f2937">Layer 5: Storage & Analytics</text>
+
+  <!-- Log Analytics -->
+  <rect x="100" y="820" width="160" height="60" class="box viz" rx="8"/>
+  <text x="180" y="840" text-anchor="middle" class="label">Log Analytics</text>
+  <text x="180" y="855" text-anchor="middle" class="small-text">FinOpsAgentMetrics_CL</text>
+
+  <!-- Power BI -->
+  <rect x="330" y="820" width="160" height="60" class="box viz" rx="8"/>
+  <text x="410" y="840" text-anchor="middle" class="label">Power BI</text>
+  <text x="410" y="855" text-anchor="middle" class="small-text">Cost Reports & Trends</text>
+
+  <!-- Workbooks -->
+  <rect x="560" y="820" width="160" height="60" class="box viz" rx="8"/>
+  <text x="640" y="840" text-anchor="middle" class="label">Workbooks</text>
+  <text x="640" y="855" text-anchor="middle" class="small-text">Real-time Dashboard</text>
+
+  <!-- Arrows from FinOps to storage -->
+  <path d="M 180 730 L 180 820" class="arrow"/>
+  <path d="M 295 730 L 410 820" class="arrow"/>
+  <path d="M 295 730 L 640 820" class="arrow"/>
+
+  <!-- SIDE PANEL: KEY TECHNOLOGIES -->
+  <text x="750" y="110" font-size="13" font-weight="bold" fill="#1f2937">Key Technologies</text>
+
+  <rect x="750" y="130" width="400" height="700" fill="white" stroke="#d1d5db" stroke-width="1" rx="4"/>
+
+  <text x="770" y="160" font-size="11" font-weight="bold" fill="#374151">Entry & Identity</text>
+  <text x="770" y="180" font-size="10" fill="#6b7280">• Microsoft Teams API</text>
+  <text x="770" y="195" font-size="10" fill="#6b7280">• Azure Bot Framework</text>
+  <text x="770" y="210" font-size="10" fill="#6b7280">• Microsoft Graph API</text>
+
+  <text x="770" y="240" font-size="11" font-weight="bold" fill="#374151">Agent Execution</text>
+  <text x="770" y="260" font-size="10" fill="#6b7280">• Microsoft Foundry</text>
+  <text x="770" y="275" font-size="10" fill="#6b7280">• OpenAI-Compatible API</text>
+  <text x="770" y="290" font-size="10" fill="#6b7280">• gpt-5-mini Model</text>
+
+  <text x="770" y="320" font-size="11" font-weight="bold" fill="#374151">Metrics & Standards</text>
+  <text x="770" y="340" font-size="10" fill="#6b7280">• FOCUS 1.0 Framework</text>
+  <text x="770" y="355" font-size="10" fill="#6b7280">• JSON Schema 2020-12</text>
+  <text x="770" y="370" font-size="10" fill="#6b7280">• Token Accounting</text>
+
+  <text x="770" y="400" font-size="11" font-weight="bold" fill="#374151">Storage & Analytics</text>
+  <text x="770" y="420" font-size="10" fill="#6b7280">• Azure Log Analytics</text>
+  <text x="770" y="435" font-size="10" fill="#6b7280">• Application Insights</text>
+  <text x="770" y="450" font-size="10" fill="#6b7280">• Kusto Query Language (KQL)</text>
+
+  <text x="770" y="480" font-size="11" font-weight="bold" fill="#374151">Visualization</text>
+  <text x="770" y="500" font-size="10" fill="#6b7280">• Azure Workbooks</text>
+  <text x="770" y="515" font-size="10" fill="#6b7280">• Power BI Desktop/Service</text>
+  <text x="770" y="530" font-size="10" fill="#6b7280">• Ad-hoc KQL Queries</text>
+
+  <text x="770" y="560" font-size="11" font-weight="bold" fill="#374151">Cost Metrics Captured</text>
+  <text x="770" y="580" font-size="10" fill="#6b7280">• Input Tokens</text>
+  <text x="770" y="595" font-size="10" fill="#6b7280">• Output Tokens</text>
+  <text x="770" y="610" font-size="10" fill="#6b7280">• Total Tokens</text>
+  <text x="770" y="625" font-size="10" fill="#6b7280">• Estimated Cost (USD)</text>
+  <text x="770" y="640" font-size="10" fill="#6b7280">• Processing Time</text>
+  <text x="770" y="655" font-size="10" fill="#6b7280">• Model & Agent Version</text>
+
+  <text x="770" y="685" font-size="11" font-weight="bold" fill="#374151">Outputs</text>
+  <text x="770" y="705" font-size="10" fill="#6b7280">• Cost by User/Department</text>
+  <text x="770" y="720" font-size="10" fill="#6b7280">• Token Consumption Trends</text>
+  <text x="770" y="735" font-size="10" fill="#6b7280">• Chargeback & Showback Reports</text>
+
+  <!-- Footer -->
+  <text x="600" y="880" text-anchor="middle" font-size="9" fill="#9ca3af">Data flows from Teams user message → Bot identity extraction → Foundry agent execution → FinOps metrics capture → Log Analytics → Visualization & Reporting</text>
+</svg>
