@@ -189,11 +189,15 @@ Chargeback/Optimization (Action)
     └─────────┘      └────────────┘      └───────┘
 ```
 
+### Architecture Diagram
+
+![FinOps for Agents Architecture](./images/architecture-diagram.svg)
+
 ---
 
 ## Sample Dashboard: Token Consumption by User
 
-![Token Consumption by User](./images/token-consumption-by-user.png)
+![Token Consumption by User](./images/token-consumption-by-user.svg)
 
 *This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
 
@@ -333,8 +337,8 @@ finops-for-agents/
 ├── dashboards/                    # Azure Workbooks
 │   └── finops-dashboard.json     # Sample dashboard template
 ├── images/                        # Documentation images
-│   ├── token-consumption-by-user.png
-│   └── architecture-diagram.png
+│   ├── token-consumption-by-user.svg
+│   └── architecture-diagram.svg
 ├── code/SETUP.md                 # Detailed setup guide
 └── README.md                     # This file
 ```
