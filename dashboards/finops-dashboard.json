@@ -1,0 +1,34 @@
+{
+  "etag": "\"64004cab-0000-0100-0000-6a8ea6a50000\"",
+  "extendedLocation": null,
+  "id": "/subscriptions/99f1582e-0660-4cdb-8dac-21d7a4752603/resourcegroups/ms-hackathon-finops-agent-rg/providers/microsoft.insights/workbooks/ea704384-33be-4331-80df-decb53bee083",
+  "identity": {
+    "principalId": null,
+    "tenantId": null,
+    "type": "None",
+    "userAssignedIdentities": null
+  },
+  "kind": "shared",
+  "location": "eastus",
+  "managedBy": null,
+  "name": "ea704384-33be-4331-80df-decb53bee083",
+  "plan": null,
+  "properties": {
+    "category": "workbook",
+    "displayName": "bar chart token consumption",
+    "revision": "c195d88bbee24a0b9d45acdab7289b54",
+    "serializedData": null,
+    "sourceId": "/subscriptions/99f1582e-0660-4cdb-8dac-21d7a4752603/resourcegroups/ms-hackathon-finops-agent-rg/providers/microsoft.operationalinsights/workspaces/log-analytics-finops-for-agents",
+    "storageUri": null,
+    "tags": null,
+    "timeModified": "2026-08-26T08:41:09.6067873Z",
+    "userId": "bb21c6ed-b5d7-4d44-8814-85ba26bed1f5",
+    "version": "Notebook/1.0"
+  },
+  "resourceGroup": "ms-hackathon-finops-agent-rg",
+  "sku": null,
+  "tags": {
+    "hidden-title": "bar chart token consumption"
+  },
+  "type": "microsoft.insights/workbooks"
+}
