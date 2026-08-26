@@ -24,7 +24,7 @@ Example:
         store_metrics(record.to_dict())
 """
 
-from finops_schema import (
+from .finops_schema import (
     FinOpsAgentMetrics,
     SchemaValidator,
     validate_record,
