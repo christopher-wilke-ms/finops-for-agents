@@ -1,34 +1,110 @@
 {
-  "etag": "\"64004cab-0000-0100-0000-6a8ea6a50000\"",
-  "extendedLocation": null,
-  "id": "/subscriptions/99f1582e-0660-4cdb-8dac-21d7a4752603/resourcegroups/ms-hackathon-finops-agent-rg/providers/microsoft.insights/workbooks/ea704384-33be-4331-80df-decb53bee083",
-  "identity": {
-    "principalId": null,
-    "tenantId": null,
-    "type": "None",
-    "userAssignedIdentities": null
+  "contentVersion": "1.0.0.0",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/releases/download/1.0.0/schema.json",
+  "parameters": [],
+  "metadata": {
+    "name": "FinOps for Agents Dashboard",
+    "description": "Monitor token consumption and costs for AI Foundry agents",
+    "author": "FinOps Team"
   },
-  "kind": "shared",
-  "location": "eastus",
-  "managedBy": null,
-  "name": "ea704384-33be-4331-80df-decb53bee083",
-  "plan": null,
-  "properties": {
-    "category": "workbook",
-    "displayName": "bar chart token consumption",
-    "revision": "c195d88bbee24a0b9d45acdab7289b54",
-    "serializedData": null,
-    "sourceId": "/subscriptions/99f1582e-0660-4cdb-8dac-21d7a4752603/resourcegroups/ms-hackathon-finops-agent-rg/providers/microsoft.operationalinsights/workspaces/log-analytics-finops-for-agents",
-    "storageUri": null,
-    "tags": null,
-    "timeModified": "2026-08-26T08:41:09.6067873Z",
-    "userId": "bb21c6ed-b5d7-4d44-8814-85ba26bed1f5",
-    "version": "Notebook/1.0"
-  },
-  "resourceGroup": "ms-hackathon-finops-agent-rg",
-  "sku": null,
-  "tags": {
-    "hidden-title": "bar chart token consumption"
-  },
-  "type": "microsoft.insights/workbooks"
+  "fallbackResourceIds": [
+    "/subscriptions/99f1582e-0660-4cdb-8dac-21d7a4752603/resourcegroups/ms-hackathon-finops-agent-rg/providers/microsoft.operationalinsights/workspaces/log-analytics-finops-for-agents"
+  ],
+  "items": [
+    {
+      "type": 1,
+      "content": {
+        "json": "# FinOps for Agents - Token Consumption Dashboard\n**Real-time metrics for Microsoft Foundry AI Agent usage and costs**"
+      },
+      "name": "title"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FinOpsAgentMetrics_CL\n| where AgentName_s == \"super-fun-coding-learn-agent\"\n| summarize TotalCost = sum(EffectiveCost_d) by UserEmail_s\n| sort by TotalCost desc",
+        "size": 0,
+        "title": "Cost by User",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "TotalCost",
+              "color": "blue"
+            }
+          ],
+          "xSettings": {
+            "numberFormatSettings": {
+              "unit": null,
+              "options": {
+                "style": "decimal",
+                "useGrouping": true
+              }
+            }
+          },
+          "ySettings": {
+            "numberFormatSettings": {
+              "unit": null,
+              "options": {
+                "style": "decimal",
+                "useGrouping": true,
+                "minimumFractionDigits": 2,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        }
+      },
+      "name": "Cost by User Chart"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FinOpsAgentMetrics_CL\n| where AgentName_s == \"super-fun-coding-learn-agent\"\n| summarize TotalTokens = sum(TotalTokens_d) by bin(TimeGenerated, 1h), UserEmail_s\n| sort by TimeGenerated desc",
+        "size": 0,
+        "title": "Token Consumption Over Time",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "linechart"
+      },
+      "name": "Token Trend Chart"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FinOpsAgentMetrics_CL\n| where AgentName_s == \"super-fun-coding-learn-agent\"\n| summarize \n    TotalTokens = sum(TotalTokens_d),\n    TotalCost = sum(EffectiveCost_d),\n    RequestCount = count()\n    by UserEmail_s\n| sort by TotalTokens desc",
+        "size": 0,
+        "title": "User Summary",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TotalCost",
+              "formatter": 3,
+              "formatOptions": {
+                "showIcon": true,
+                "customColumnWidthSetting": "15ch"
+              }
+            }
+          ]
+        }
+      },
+      "name": "User Summary Table"
+    }
+  ]
 }
