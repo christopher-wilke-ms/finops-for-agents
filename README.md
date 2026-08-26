@@ -1,5 +1,9 @@
 # FinOps for Agents
 
+![Token Consumption by User](./images/token-consumption-by-user.svg)
+
+*This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
+
 **Enable cost transparency and user-level attribution for AI agent consumption using FinOps Foundation standards**
 
 ---
@@ -228,11 +232,7 @@ graph TD
 
 ---
 
-## Sample Dashboard: Token Consumption by User
 
-![Token Consumption by User](./images/token-consumption-by-user.svg)
-
-*This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
 
 ### Key Metrics Visible
 
