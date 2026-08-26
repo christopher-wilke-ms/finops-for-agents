@@ -191,7 +191,40 @@ Chargeback/Optimization (Action)
 
 ### Architecture Diagram
 
-![FinOps for Agents Architecture](./images/architecture-diagram.svg)
+```mermaid
+graph TD
+    A["👥 Microsoft Teams<br/>User Messages"]
+    B["🤖 Bot Service<br/>Extract Identity<br/>Flask Python"]
+    C["📊 Graph API<br/>Enrich User Profile"]
+    D["🧠 Foundry Agent<br/>gpt-5-mini<br/>Process & Capture Tokens"]
+    E["📈 FinOps Record<br/>FOCUS 1.0 Standard<br/>User + Tokens + Cost"]
+    F["📁 Log Analytics<br/>FinOpsAgentMetrics_CL"]
+    G["📊 Workbooks<br/>Real-time Dashboard"]
+    H["💹 Power BI<br/>Cost Reports"]
+    I["🔍 KQL Queries<br/>Ad-hoc Analysis"]
+    
+    A -->|Extract from Teams| B
+    B -->|Enrich metadata| C
+    B -->|Send query| D
+    C -->|Add department,<br/>office, phone| E
+    D -->|Tokens, model,<br/>timing| E
+    E -->|FOCUS-compliant<br/>record| F
+    F -->|Real-time data| G
+    F -->|Historical data| H
+    F -->|Query data| I
+    
+    style A fill:#e0e7ff
+    style B fill:#fef3c7
+    style C fill:#fef3c7
+    style D fill:#d1fae5
+    style E fill:#f3e8ff
+    style F fill:#dbeafe
+    style G fill:#dbeafe
+    style H fill:#dbeafe
+    style I fill:#dbeafe
+```
+
+**Or view the detailed SVG diagram:** [FinOps Architecture (SVG)](./images/architecture-diagram.svg)
 
 ---
 
