@@ -4,6 +4,16 @@
 
 *This dashboard shows real-time token consumption by department for the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a department. Anomalies are automatically detected and highlighted—departments with unusually high consumption stand out for optimization and cost control.*
 
+---
+
+## Top Users - Sample Analysis
+
+![Top Users Sample](./images/top_3_user_sample.png)
+
+*This analysis identifies the highest-consuming users for the agent. Each user's total tokens, cost, and request count are tracked, enabling targeted optimization and efficiency improvements.*
+
+---
+
 **Enable cost transparency and user-level attribution for AI agent consumption using FinOps Foundation standards**
 
 ---
