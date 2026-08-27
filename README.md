@@ -1,8 +1,8 @@
 # FinOps for Agents
 
-![Token Consumption by User](./images/tokens_by_department.png)
+![Token Consumption by Department](./images/tokens_by_department.png)
 
-*This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
+*This dashboard shows real-time token consumption by department for the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a department. Anomalies are automatically detected and highlighted—departments with unusually high consumption stand out for optimization and cost control.*
 
 **Enable cost transparency and user-level attribution for AI agent consumption using FinOps Foundation standards**
 
@@ -347,6 +347,45 @@ FinOpsAgentMetrics_CL
 
 1. **Azure Workbook**: Log Analytics → Workbooks → Import `dashboards/finops-dashboard.json`
 2. **Power BI**: Connect to Log Analytics workspace and build custom reports
+
+### Anomaly Detection & Cost Alerts
+
+Monitor token consumption anomalies in real-time with automated alerts:
+
+**KQL Query for Anomaly Detection:**
+
+```kql
+FinOpsAgentMetrics_CL
+| where AgentName_s == "super-fun-coding-learn-agent"
+| make-series TotalTokens = sum(TotalTokens_d) on TimeGenerated step 1h by UserDepartment_s
+| extend anomalies = series_decompose_anomalies(TotalTokens, 1.5)
+| render anomalychart
+```
+
+This query:
+- Groups token consumption by department over 1-hour periods
+- Automatically detects anomalies (unusual spikes or dips)
+- Visualizes departments with high/low consumption
+
+**Setting Up Alert Rules:**
+
+1. Go to **Log Analytics** → **Alerts** → **Create alert rule**
+2. Use this query to alert on high consumption:
+   ```kql
+   FinOpsAgentMetrics_CL
+   | where AgentName_s == "super-fun-coding-learn-agent"
+   | summarize TotalTokens = sum(TotalTokens_d) by UserDepartment_s, bin(TimeGenerated, 1h)
+   | where TotalTokens > 20000
+   ```
+3. Configure:
+   - **Threshold**: 20,000 tokens/hour (adjust as needed)
+   - **Frequency**: Every 1 hour
+   - **Action**: Email/Teams notification
+4. Enable the alert rule
+
+![Alert Rule Configuration](./images/alert_rule.png)
+
+*Alert rules automatically notify operations teams when departments exceed token consumption thresholds, enabling proactive cost management and optimization.*
 
 ---
 
