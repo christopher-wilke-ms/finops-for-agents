@@ -1,6 +1,6 @@
 # FinOps for Agents
 
-![Token Consumption by User](./images/token-consumption-by-user.svg)
+![Token Consumption by User](./images/tokens_by_department.png)
 
 *This dashboard shows real-time token consumption across all users of the super-fun-coding-learn-agent. Each bar represents total tokens (input + output) consumed by a user over the past 7 days. Users can quickly identify high-consumption patterns and optimize their workflows.*
 

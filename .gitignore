@@ -55,3 +55,6 @@ build/
 .env
 .env.local
 code/.env
+
+showcases/
+.DS_*

@@ -84,7 +84,7 @@ def get_user_info_from_graph(aad_object_id: str) -> Optional[Dict[str, str]]:
             print(f"[GRAPH] Could not get access token")
             return None
 
-        url = f"https://graph.microsoft.com/v1.0/users/{aad_object_id}"
+        url = f"https://graph.microsoft.com/v1.0/users/{aad_object_id}?$select=mail,department,jobTitle,officeLocation,mobilePhone,displayName"
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -97,6 +97,10 @@ def get_user_info_from_graph(aad_object_id: str) -> Optional[Dict[str, str]]:
         if response.status_code == 200:
             user_data = response.json()
 
+            # DEBUG: Log what Graph API returned
+            print(f"[GRAPH] Full response: {user_data}")
+            print(f"[GRAPH] Department value: '{user_data.get('department')}'")
+
             user_info = {
                 "mail": user_data.get("mail", "N/A"),
                 "department": user_data.get("department", "N/A"),
@@ -107,6 +111,7 @@ def get_user_info_from_graph(aad_object_id: str) -> Optional[Dict[str, str]]:
             }
 
             print(f"[GRAPH] Successfully fetched user info")
+            print(f"[GRAPH] Parsed user_info: {user_info}")
             return user_info
         else:
             error_data = response.json()
