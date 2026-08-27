@@ -387,6 +387,35 @@ This query:
 
 *Alert rules automatically notify operations teams when departments exceed token consumption thresholds, enabling proactive cost management and optimization.*
 
+### Top Users Analysis
+
+Identify and monitor your highest-consuming users for optimization and cost management:
+
+**KQL Query for Top Users:**
+
+```kql
+FinOpsAgentMetrics_CL
+| where AgentName_s == "super-fun-coding-learn-agent"
+| summarize 
+    TotalTokens = sum(TotalTokens_d),
+    TotalCost = sum(EffectiveCost_d),
+    RequestCount = count(),
+    AvgCostPerRequest = avg(EffectiveCost_d)
+    by UserEmail_s
+| top 5 by TotalTokens desc
+```
+
+This query returns:
+- **User Email**: Email address of the user
+- **Total Tokens**: Sum of all tokens consumed
+- **Total Cost**: Estimated cost for that user
+- **Request Count**: Number of interactions
+- **Avg Cost/Request**: Average cost per query (efficiency metric)
+
+![Top Users Sample](./images/top_3_user_sample.png)
+
+*This analysis enables targeted optimization: reach out to high-consumption users to improve query efficiency, identify training needs, or optimize agent usage patterns.*
+
 ---
 
 ## Project Structure
