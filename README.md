@@ -8,7 +8,7 @@
 
 ## Top Users - Sample Analysis
 
-![Top Users Sample](./images/top_3_users_sample.png)
+![Top Users Sample](./images/top_3_user_sample.png)
 
 *This analysis identifies the highest-consuming users for the agent. Each user's total tokens, cost, and request count are tracked, enabling targeted optimization and efficiency improvements.*
 
