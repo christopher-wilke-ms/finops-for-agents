@@ -44,25 +44,6 @@ def _get_logs_client() -> LogsQueryClient:
         _logs_client = LogsQueryClient(DefaultAzureCredential())
     return _logs_client
 
-
-@app.mcp_tool()
-def hello_mcp() -> str:
-    """Hello world."""
-    return "Hello I am MCPTool!"
-
-
-@app.mcp_tool_trigger(
-    arg_name="context",
-    tool_name="my-random_tool",
-    description="Returns a random number between 1 and 100.",
-)
-def my_random_tool(context: str) -> str:
-    """Return a random number, and log the invocation to the host console."""
-    number = random.randint(1, 100)
-    logging.info("[MCP] >>> my-random_tool CALLED -> returning %s", number)
-    return str(number)
-
-
 @app.mcp_tool()
 @app.mcp_tool_property(
     "agent_name",
