@@ -18,6 +18,8 @@ from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from dotenv import load_dotenv
 
+from pricing import get_token_prices
+
 load_dotenv()
 
 # Import finops_data_layer (parent directory)
@@ -68,14 +70,11 @@ def create_finops_record(
     try:
         from finops_data_layer import FinOpsAgentMetrics
 
-        # Calculate token costs (example pricing)
         input_tokens = foundry_metadata.get('input_tokens', 0)
         output_tokens = foundry_metadata.get('output_tokens', 0)
         total_tokens = foundry_metadata.get('total_tokens', 0)
 
-        # Simple cost model (adjust based on actual pricing)
-        input_price = 0.00001  # $0.00001 per input token
-        output_price = 0.00003  # $0.00003 per output token
+        input_price, output_price = get_token_prices(foundry_metadata.get('model', 'unknown'))
         estimated_cost = (input_tokens * input_price) + (output_tokens * output_price)
 
         # Get current billing period dates

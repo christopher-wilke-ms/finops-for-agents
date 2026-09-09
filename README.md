@@ -112,6 +112,7 @@ graph LR
 | **Auth helpers** | [`code/utils.py`](./code/utils.py) | Client-credentials token acquisition for three distinct scopes: Bot Framework, Graph, and Foundry. Decodes the inbound Teams JWT. |
 | **Identity enrichment** | [`code/user_metadata.py`](./code/user_metadata.py) | Extracts the AAD object ID from the activity, then calls Graph `/users/{id}` to resolve department, job title, office and mail. |
 | **Agent client** | [`code/foundry_agent.py`](./code/foundry_agent.py) | Calls the Foundry agent over the OpenAI-compatible Responses protocol and parses `usage` (input / output / reasoning tokens), model, agent version and timings. |
+| **Pricing** | [`code/pricing.py`](./code/pricing.py) | Resolves real per-token USD rates for the model from the Azure Retail Prices API, cached in-process. Falls back to static rates if the API is unreachable. |
 | **Metrics pipeline** | [`code/finops_metrics.py`](./code/finops_metrics.py) | Builds the FOCUS record, validates it, prices it, and ships it to Log Analytics via the Data Collector API (HMAC-SHA256 signed). |
 | **Data model** | [`finops_data_layer/`](./finops_data_layer/) | `schema.json` (JSON Schema 2020-12, 51 fields, 22 required) plus a typed Python builder and validator. |
 | **Infrastructure** | [`infra/`](./infra/) | Terraform for the resource group, Foundry account + project, `gpt-5-mini` deployment, Log Analytics, Application Insights, Storage, Cosmos DB and AI Search. |
@@ -195,6 +196,10 @@ BOT_APP_PASSWORD=<bot app registration client secret>
 BILLING_ACCOUNT_ID=<azure subscription id>
 APPLICATIONINSIGHTS_INSTRUMENTATION_KEY=<from terraform output>
 LOG_ANALYTICS_SHARED_KEY=<workspace primary key>
+
+# Optional — token pricing lookup (defaults shown)
+PRICING_REGION=swedencentral
+PRICING_CACHE_TTL_SECONDS=86400
 ```
 
 Retrieve the Log Analytics workspace key with:
@@ -234,6 +239,7 @@ the resolved user profile and the token accounting for that turn.
 Console output confirms the record was shipped:
 
 ```
+[PRICING] gpt-5-mini @ swedencentral: input $0.000000250/token, output $0.000002000/token
 [FINOPS] ========== FINOPS METRICS RECORDED ==========
 [FINOPS] User: alice@contoso.com
 [FINOPS] Department: IT Operations
@@ -241,9 +247,12 @@ Console output confirms the record was shipped:
 [FINOPS] Input Tokens: 4,342
 [FINOPS] Output Tokens: 731
 [FINOPS] Total Tokens: 5,073
-[FINOPS] Cost: $0.0653
+[FINOPS] Cost: $0.0025
 [APPINSIGHTS] ✅ Sent FinOps record to Log Analytics
 ```
+
+The `[PRICING]` line appears once per model per 24 hours — rates are fetched from the
+Azure Retail Prices API and cached in-process.
 
 > **First ingestion takes 2–5 minutes.** Log Analytics creates the `FinOpsAgentMetrics_CL`
 > table on the first successful POST; queries return empty until then.
@@ -350,6 +359,7 @@ finops-for-agents/
 │   ├── utils.py                   # JWT decode + AAD token acquisition per scope
 │   ├── user_metadata.py           # Teams activity + Microsoft Graph enrichment
 │   ├── foundry_agent.py           # Foundry Responses API client, usage parsing
+│   ├── pricing.py                 # Retail Prices API lookup + in-process cache
 │   ├── finops_metrics.py          # FOCUS record build, validate, price, ship
 │   ├── requirements.txt
 │   └── SETUP.md                   # Detailed setup & troubleshooting guide
@@ -393,8 +403,10 @@ and a production deployment, roughly in priority order.
 
 ### Medium term — cost accuracy
 
-- [ ] **Real pricing, not a flat rate.** Cost is currently `$0.00001/input + $0.00003/output`
-      hardcoded. Pull actual rates per model from the Azure Retail Prices API.
+- [x] **Real pricing, not a flat rate.** Per-token rates are resolved per model from the
+      Azure Retail Prices API ([`code/pricing.py`](./code/pricing.py)) and cached in-process
+      for 24 hours. Each model needs an entry in the `METERS` map — meter names are not
+      derivable from the model id.
 - [ ] **Price cached and reasoning tokens separately.** They are captured but billed at the
       standard output rate today, which overstates cost for reasoning models.
 - [ ] **Reconcile against the Azure invoice.** Attributed cost should tie back to the actual

@@ -155,6 +155,8 @@ resource "azurerm_cognitive_deployment" "gpt_deployment" {
     azapi_resource.ai_foundry
   ]
 
+  # Deployment name must equal the model name below, and the SKU must stay
+  # GlobalStandard - code/pricing.py resolves token prices from this name.
   name                 = "gpt-5-mini"
   cognitive_account_id = azapi_resource.ai_foundry.id
 
