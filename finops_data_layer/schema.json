@@ -221,6 +221,24 @@
       "description": "Family or class of the model",
       "examples": ["OpenAI", "Anthropic"]
     },
+    "x_InputPricePerMillionTokens": {
+      "type": ["number", "null"],
+      "description": "Input token list price in the billing currency per one million tokens",
+      "minimum": 0,
+      "examples": [0.25]
+    },
+    "x_CachedInputPricePerMillionTokens": {
+      "type": ["number", "null"],
+      "description": "Cached input token list price in the billing currency per one million tokens",
+      "minimum": 0,
+      "examples": [0.025]
+    },
+    "x_OutputPricePerMillionTokens": {
+      "type": ["number", "null"],
+      "description": "Output token list price in the billing currency per one million tokens",
+      "minimum": 0,
+      "examples": [2.0]
+    },
     "x_InputTokens": {
       "type": "integer",
       "description": "Tokens consumed from the input/prompt",
@@ -238,6 +256,12 @@
       "description": "Tokens used for reasoning (if applicable)",
       "minimum": 0,
       "examples": [128]
+    },
+    "x_CachedInputTokens": {
+      "type": ["integer", "null"],
+      "description": "Subset of input tokens served from the prompt cache, billed at a reduced rate",
+      "minimum": 0,
+      "examples": [3968]
     },
     "x_TotalTokens": {
       "type": "integer",

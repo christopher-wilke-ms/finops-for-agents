@@ -72,6 +72,10 @@ class FinOpsAgentMetrics:
         agent_version: Optional[str] = None,
         model_name: Optional[str] = None,
         model_family: Optional[str] = None,
+        input_price_per_million_tokens: Optional[float] = None,
+        cached_input_price_per_million_tokens: Optional[float] = None,
+        output_price_per_million_tokens: Optional[float] = None,
+        cached_input_tokens: Optional[int] = None,
         reasoning_tokens: Optional[int] = None,
         tokens_per_second: Optional[float] = None,
         processing_time_seconds: Optional[float] = None,
@@ -120,8 +124,12 @@ class FinOpsAgentMetrics:
         self.model_id = model_id
         self.model_name = model_name
         self.model_family = model_family
+        self.input_price_per_million_tokens = input_price_per_million_tokens
+        self.cached_input_price_per_million_tokens = cached_input_price_per_million_tokens
+        self.output_price_per_million_tokens = output_price_per_million_tokens
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
+        self.cached_input_tokens = cached_input_tokens
         self.reasoning_tokens = reasoning_tokens
         self.total_tokens = total_tokens
         self.tokens_per_second = tokens_per_second
@@ -184,6 +192,10 @@ class FinOpsAgentMetrics:
             "x_AgentVersion": self.agent_version,
             "x_ModelName": self.model_name,
             "x_ModelFamily": self.model_family,
+            "x_InputPricePerMillionTokens": self.input_price_per_million_tokens,
+            "x_CachedInputPricePerMillionTokens": self.cached_input_price_per_million_tokens,
+            "x_OutputPricePerMillionTokens": self.output_price_per_million_tokens,
+            "x_CachedInputTokens": self.cached_input_tokens,
             "x_ReasoningTokens": self.reasoning_tokens,
             "x_TokensPerSecond": self.tokens_per_second,
             "x_ProcessingTimeSeconds": self.processing_time_seconds,

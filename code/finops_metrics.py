@@ -73,9 +73,18 @@ def create_finops_record(
         input_tokens = foundry_metadata.get('input_tokens', 0)
         output_tokens = foundry_metadata.get('output_tokens', 0)
         total_tokens = foundry_metadata.get('total_tokens', 0)
+        cached_tokens = foundry_metadata.get('cached_tokens', 0)
+        reasoning_tokens = foundry_metadata.get('reasoning_tokens', 0)
 
-        input_price, output_price = get_token_prices(foundry_metadata.get('model', 'unknown'))
-        estimated_cost = (input_tokens * input_price) + (output_tokens * output_price)
+        prices = get_token_prices(foundry_metadata.get('model', 'unknown'))
+        # Cached tokens are a subset of input_tokens, billed at the cheaper cached rate.
+        # Reasoning tokens are a subset of output_tokens and have no separate meter.
+        uncached_input_tokens = max(input_tokens - cached_tokens, 0)
+        estimated_cost = (
+            (uncached_input_tokens * prices.input)
+            + (cached_tokens * prices.cached_input)
+            + (output_tokens * prices.output)
+        )
 
         # Get current billing period dates
         now = datetime.now()
@@ -115,8 +124,13 @@ def create_finops_record(
             model_id=foundry_metadata.get('model', 'unknown'),
             model_name=f"GPT Model ({foundry_metadata.get('model', 'unknown')})",
             model_family="OpenAI",
+            input_price_per_million_tokens=prices.input * 1_000_000,
+            cached_input_price_per_million_tokens=prices.cached_input * 1_000_000,
+            output_price_per_million_tokens=prices.output * 1_000_000,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
+            cached_input_tokens=cached_tokens,
+            reasoning_tokens=reasoning_tokens,
             total_tokens=total_tokens,
             tokens_per_second=total_tokens / foundry_metadata.get('processing_time_seconds', 1) if foundry_metadata.get('processing_time_seconds', 0) > 0 else 0,
             created_at=datetime.fromtimestamp(foundry_metadata.get('created_at', 0)).isoformat() + "Z" if foundry_metadata.get('created_at') else datetime.now().isoformat() + "Z",
@@ -193,8 +207,13 @@ def send_to_application_insights(record: Dict[str, Any]) -> bool:
             "AgentVersion": str(record.get('x_AgentVersion', 'N/A')),
             "ModelId": str(record.get('x_ModelId', 'N/A')),
             "RequestId": str(record.get('x_RequestId', 'N/A')),
+            "InputPricePerMillionTokens": float(record.get('x_InputPricePerMillionTokens', 0)),
+            "CachedInputPricePerMillionTokens": float(record.get('x_CachedInputPricePerMillionTokens', 0)),
+            "OutputPricePerMillionTokens": float(record.get('x_OutputPricePerMillionTokens', 0)),
             "InputTokens": float(record.get('x_InputTokens', 0)),
+            "CachedInputTokens": float(record.get('x_CachedInputTokens', 0)),
             "OutputTokens": float(record.get('x_OutputTokens', 0)),
+            "ReasoningTokens": float(record.get('x_ReasoningTokens', 0)),
             "TotalTokens": float(record.get('x_TotalTokens', 0)),
             "EffectiveCost": float(record.get('EffectiveCost', 0)),
             "ProcessingTimeSeconds": float(record.get('x_ProcessingTimeSeconds', 0)),
@@ -259,8 +278,8 @@ def log_finops_metrics(record: Dict[str, Any]) -> None:
 [FINOPS] Department: {record.get('x_UserDepartment', 'N/A')}
 [FINOPS] Agent: {record.get('x_AgentName', 'N/A')} (v{record.get('x_AgentVersion', 'N/A')})
 [FINOPS] Model: {record.get('x_ModelId', 'N/A')}
-[FINOPS] Input Tokens: {record.get('x_InputTokens', 0):,}
-[FINOPS] Output Tokens: {record.get('x_OutputTokens', 0):,}
+[FINOPS] Input Tokens: {record.get('x_InputTokens', 0):,} (cached: {record.get('x_CachedInputTokens', 0):,})
+[FINOPS] Output Tokens: {record.get('x_OutputTokens', 0):,} (reasoning: {record.get('x_ReasoningTokens', 0):,})
 [FINOPS] Total Tokens: {record.get('x_TotalTokens', 0):,}
 [FINOPS] Processing Time: {record.get('x_ProcessingTimeSeconds', 0)} seconds
 [FINOPS] Cost: ${record.get('EffectiveCost', 0):.4f}

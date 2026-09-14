@@ -96,6 +96,7 @@ def _parse_foundry_response(response_data: Dict[str, Any]) -> Tuple[str, Dict[st
         "agent_name": "unknown",
         "agent_version": "unknown",
         "input_tokens": 0,
+        "cached_tokens": 0,
         "output_tokens": 0,
         "reasoning_tokens": 0,
         "total_tokens": 0,
@@ -117,7 +118,11 @@ def _parse_foundry_response(response_data: Dict[str, Any]) -> Tuple[str, Dict[st
         metadata["output_tokens"] = usage.get("output_tokens", 0)
         metadata["total_tokens"] = usage.get("total_tokens", 0)
 
-        # Extract reasoning tokens if available (o1/o1-mini models)
+        # Cached tokens are a subset of input_tokens and bill at a reduced rate
+        if "input_tokens_details" in usage:
+            metadata["cached_tokens"] = usage["input_tokens_details"].get("cached_tokens", 0)
+
+        # Reasoning tokens are a subset of output_tokens, billed at the output rate
         if "output_tokens_details" in usage:
             metadata["reasoning_tokens"] = usage["output_tokens_details"].get("reasoning_tokens", 0)
 
@@ -139,6 +144,6 @@ def _parse_foundry_response(response_data: Dict[str, Any]) -> Tuple[str, Dict[st
         agent_response = "No response received"
 
     print(f"[FOUNDRY] Successfully got response from agent")
-    print(f"[FOUNDRY] Tokens - Input: {metadata['input_tokens']}, Output: {metadata['output_tokens']}, Total: {metadata['total_tokens']}")
+    print(f"[FOUNDRY] Tokens - Input: {metadata['input_tokens']} (cached: {metadata['cached_tokens']}), Output: {metadata['output_tokens']}, Total: {metadata['total_tokens']}")
 
     return (agent_response, metadata)

@@ -112,11 +112,11 @@ graph LR
 | **Auth helpers** | [`code/utils.py`](./code/utils.py) | Client-credentials token acquisition for three distinct scopes: Bot Framework, Graph, and Foundry. Decodes the inbound Teams JWT. |
 | **Identity enrichment** | [`code/user_metadata.py`](./code/user_metadata.py) | Extracts the AAD object ID from the activity, then calls Graph `/users/{id}` to resolve department, job title, office and mail. |
 | **Agent client** | [`code/foundry_agent.py`](./code/foundry_agent.py) | Calls the Foundry agent over the OpenAI-compatible Responses protocol and parses `usage` (input / output / reasoning tokens), model, agent version and timings. |
-| **Pricing** | [`code/pricing.py`](./code/pricing.py) | Resolves real per-token USD rates for the model from the Azure Retail Prices API, cached in-process. Falls back to static rates if the API is unreachable. |
+| **Pricing** | [`code/pricing.py`](./code/pricing.py) | Resolves real per-token USD rates for the model from the Azure Retail Prices API — input, cached input and output separately — cached in-process. Falls back to static rates if the API is unreachable. |
 | **Metrics pipeline** | [`code/finops_metrics.py`](./code/finops_metrics.py) | Builds the FOCUS record, validates it, prices it, and ships it to Log Analytics via the Data Collector API (HMAC-SHA256 signed). |
-| **Data model** | [`finops_data_layer/`](./finops_data_layer/) | `schema.json` (JSON Schema 2020-12, 51 fields, 22 required) plus a typed Python builder and validator. |
+| **Data model** | [`finops_data_layer/`](./finops_data_layer/) | `schema.json` (JSON Schema 2020-12, 55 fields, 22 required) plus a typed Python builder and validator. |
 | **Infrastructure** | [`infra/`](./infra/) | Terraform for the resource group, Foundry account + project, `gpt-5-mini` deployment, Log Analytics, Application Insights, Storage, Cosmos DB and AI Search. |
-| **Dashboard** | [`dashboards/finops-dashboard.json`](./dashboards/finops-dashboard.json) | Importable Azure Workbook: tokens by department, trend over time, and a department summary table. |
+| **Dashboard** | [`dashboards/finops-dashboard.json`](./dashboards/finops-dashboard.json) | Importable Azure Workbook: department, model pricing, and user-to-model usage and cost views. |
 | **Teams app** | [`teams_app/`](./teams_app/) | Manifest and icons for sideloading the bot into Teams. |
 
 ### The data model
@@ -133,7 +133,8 @@ columns where they exist and the FOCUS-sanctioned `x_` prefix for agent-specific
 | **Cost (FOCUS)** | `EffectiveCost`, `BilledCost`, `ListCost`, `ConsumedQuantity`, `ConsumedUnit` |
 | **Identity (`x_`)** | `x_UserId`, `x_UserEmail`, `x_UserName`, `x_UserDepartment`, `x_CostCenter`, `x_TeamId` |
 | **Agent (`x_`)** | `x_AgentId`, `x_AgentName`, `x_AgentVersion`, `x_ModelId`, `x_ModelName`, `x_ModelFamily` |
-| **Tokens (`x_`)** | `x_InputTokens`, `x_OutputTokens`, `x_ReasoningTokens`, `x_TotalTokens`, `x_TokensPerSecond` |
+| **Pricing (`x_`)** | `x_InputPricePerMillionTokens`, `x_CachedInputPricePerMillionTokens`, `x_OutputPricePerMillionTokens` |
+| **Tokens (`x_`)** | `x_InputTokens`, `x_CachedInputTokens`, `x_OutputTokens`, `x_ReasoningTokens`, `x_TotalTokens`, `x_TokensPerSecond` |
 | **Execution (`x_`)** | `x_CreatedAt`, `x_CompletedAt`, `x_ProcessingTimeSeconds`, `x_RequestId`, `x_Channel` |
 
 Records are validated against the schema **before** they are shipped — a malformed record is
@@ -239,20 +240,27 @@ the resolved user profile and the token accounting for that turn.
 Console output confirms the record was shipped:
 
 ```
-[PRICING] gpt-5-mini @ swedencentral: input $0.000000250/token, output $0.000002000/token
+[PRICING] Fetching prices for 'gpt-5-mini' in swedencentral from https://prices.azure.com/api/retail/prices
+[PRICING]   HTTP 200 in 547 ms
+[PRICING]   3 of 3 expected meter(s) returned
+[PRICING]   input        'GPT 5 Mini Inpt Glbl 1M Tokens' = $0.25 per 1M -> $0.000000250/token
+[PRICING]   cached_input 'GPT 5 Mini cchd Inpt Glbl 1M Tokens' = $0.025 per 1M -> $0.000000025/token
+[PRICING]   output       'GPT 5 Mini outpt Glbl 1M Tokens' = $2.0 per 1M -> $0.000002000/token
+[PRICING] Cached prices for 'gpt-5-mini' for the next 24h
 [FINOPS] ========== FINOPS METRICS RECORDED ==========
 [FINOPS] User: alice@contoso.com
 [FINOPS] Department: IT Operations
 [FINOPS] Agent: super-fun-coding-learn-agent (v1)
-[FINOPS] Input Tokens: 4,342
-[FINOPS] Output Tokens: 731
+[FINOPS] Input Tokens: 4,342 (cached: 3,968)
+[FINOPS] Output Tokens: 731 (reasoning: 128)
 [FINOPS] Total Tokens: 5,073
-[FINOPS] Cost: $0.0025
+[FINOPS] Cost: $0.0016
 [APPINSIGHTS] ✅ Sent FinOps record to Log Analytics
 ```
 
-The `[PRICING]` line appears once per model per 24 hours — rates are fetched from the
-Azure Retail Prices API and cached in-process.
+The `[PRICING]` block appears once per model per 24 hours — subsequent requests are served
+from the in-process cache and log nothing. If a meter is missing or the API is unreachable,
+the failure is logged and static fallback rates are used instead.
 
 > **First ingestion takes 2–5 minutes.** Log Analytics creates the `FinOpsAgentMetrics_CL`
 > table on the first successful POST; queries return empty until then.
@@ -305,6 +313,63 @@ FinOpsAgentMetrics_CL
 request is simply a heavy user; a user with high cost *per request* is a prompting problem you
 can fix with training.
 
+### Model prices and usage
+
+Each request records the input, cached-input and output rates used to calculate its cost. The
+rates are normalized to USD per one million tokens so models with differently sized Azure
+meters remain directly comparable.
+
+```kql
+let modelUsage = FinOpsAgentMetrics_CL
+| summarize
+      TotalTokens = sum(TotalTokens_d),
+      TotalCost = sum(EffectiveCost_d),
+      RequestCount = count()
+      by Model = ModelId_s;
+let latestModelPrices = FinOpsAgentMetrics_CL
+| extend
+      InputPriceUSDPer1M = todouble(column_ifexists("InputPricePerMillionTokens_d", real(null))),
+      CachedInputPriceUSDPer1M = todouble(column_ifexists("CachedInputPricePerMillionTokens_d", real(null))),
+      OutputPriceUSDPer1M = todouble(column_ifexists("OutputPricePerMillionTokens_d", real(null)))
+| where isnotnull(InputPriceUSDPer1M)
+| summarize arg_max(TimeGenerated, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M)
+      by Model = ModelId_s
+| project Model, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M;
+modelUsage
+| join kind=leftouter latestModelPrices on Model
+| project Model, InputPriceUSDPer1M, CachedInputPriceUSDPer1M,
+      OutputPriceUSDPer1M, TotalTokens, TotalCost, RequestCount
+| order by TotalCost desc
+```
+
+### Usage by user and model
+
+```kql
+FinOpsAgentMetrics_CL
+| extend
+      CachedInputTokens = todouble(column_ifexists("CachedInputTokens_d", 0.0)),
+      InputPriceUSDPer1M = todouble(column_ifexists("InputPricePerMillionTokens_d", real(null))),
+      CachedInputPriceUSDPer1M = todouble(column_ifexists("CachedInputPricePerMillionTokens_d", real(null))),
+      OutputPriceUSDPer1M = todouble(column_ifexists("OutputPricePerMillionTokens_d", real(null)))
+| summarize
+      TotalTokens = sum(TotalTokens_d),
+      InputTokens = sum(InputTokens_d),
+      CachedInputTokens = sum(CachedInputTokens),
+      OutputTokens = sum(OutputTokens_d),
+      TotalCost = sum(EffectiveCost_d),
+      RequestCount = count(),
+      arg_max(TimeGenerated, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M)
+      by UserEmail = iff(isempty(UserEmail_s), "N/A", UserEmail_s), Model = ModelId_s
+| project UserEmail, Model, InputPriceUSDPer1M, CachedInputPriceUSDPer1M,
+      OutputPriceUSDPer1M, InputTokens, CachedInputTokens, OutputTokens,
+      TotalTokens, TotalCost, RequestCount
+| order by UserEmail asc, TotalCost desc
+```
+
+The price columns are populated on newly ingested records. Historical rows remain in each
+aggregation but show blank prices. If the Retail Prices API is unavailable, the columns contain
+the static fallback rates that were actually used for the cost calculation.
+
 ### Anomaly detection
 
 ```kql
@@ -324,7 +389,13 @@ reduce noise.
 Log Analytics → **Workbooks** → **New** → **</> Advanced Editor** → paste the contents of
 [`dashboards/finops-dashboard.json`](./dashboards/finops-dashboard.json) → **Apply**.
 
-Update `fallbackResourceIds` in that file to your own workspace resource ID first.
+Update `fallbackResourceIds` in that file to your own workspace resource ID first. The imported
+Workbook includes **Model Prices and Usage**, **Token Consumption Grouped by Model**,
+**Usage and Cost by User and Model**, and a
+**Department to User to Model to Token Consumption Flow** graph.
+Workbook JSON contains queries rather than a frozen price list: the three price values appear
+after the updated bot ingests at least one request for that model. Existing Workbooks do not
+automatically pick up repository changes, so re-import version `1.2.0.0` after updating this file.
 
 ---
 
@@ -407,8 +478,10 @@ and a production deployment, roughly in priority order.
       Azure Retail Prices API ([`code/pricing.py`](./code/pricing.py)) and cached in-process
       for 24 hours. Each model needs an entry in the `METERS` map — meter names are not
       derivable from the model id.
-- [ ] **Price cached and reasoning tokens separately.** They are captured but billed at the
-      standard output rate today, which overstates cost for reasoning models.
+- [x] **Price cached and reasoning tokens separately.** Cached input tokens are billed against
+      the dedicated cached meter (a tenth of the input rate). Reasoning tokens have no separate
+      meter in the Azure price catalogue — they are a subset of output tokens and correctly
+      billed at the output rate, so they are recorded for visibility only.
 - [ ] **Reconcile against the Azure invoice.** Attributed cost should tie back to the actual
       Cognitive Services bill; a monthly reconciliation job would surface drift.
 

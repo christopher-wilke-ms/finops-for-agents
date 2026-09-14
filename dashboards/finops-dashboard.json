@@ -1,10 +1,10 @@
 {
-  "contentVersion": "1.0.0.0",
+  "contentVersion": "1.2.0.0",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/releases/download/1.0.0/schema.json",
   "parameters": [],
   "metadata": {
     "name": "FinOps for Agents Dashboard",
-    "description": "Monitor token consumption and costs for AI Foundry agents",
+    "description": "Monitor model prices and department-to-user-to-model token consumption for AI Foundry agents",
     "author": "FinOps Team"
   },
   "fallbackResourceIds": [
@@ -105,6 +105,146 @@
         }
       },
       "name": "User Summary Table"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let pricedUsage = FinOpsAgentMetrics_CL\n| extend\n    Model = iff(isempty(ModelId_s), \"unknown\", ModelId_s),\n    InputTokens = todouble(InputTokens_d),\n    CachedInputTokens = todouble(column_ifexists(\"CachedInputTokens_d\", 0.0)),\n    OutputTokens = todouble(OutputTokens_d),\n    InputPriceUSDPer1M = todouble(column_ifexists(\"InputPricePerMillionTokens_d\", real(null))),\n    CachedInputPriceUSDPer1M = todouble(column_ifexists(\"CachedInputPricePerMillionTokens_d\", real(null))),\n    OutputPriceUSDPer1M = todouble(column_ifexists(\"OutputPricePerMillionTokens_d\", real(null)))\n| extend UncachedInputTokens = max_of(InputTokens - CachedInputTokens, 0.0);\nlet modelUsage = pricedUsage\n| summarize\n    UncachedInputTokens = sum(UncachedInputTokens),\n    CachedInputTokens = sum(CachedInputTokens),\n    OutputTokens = sum(OutputTokens),\n    TotalTokens = sum(TotalTokens_d),\n    TotalCost = sum(EffectiveCost_d),\n    RequestCount = count()\n    by Model;\nlet latestModelPrices = pricedUsage\n| where isnotnull(InputPriceUSDPer1M)\n| summarize arg_max(TimeGenerated, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M) by Model\n| project Model, PriceObservedAt = TimeGenerated, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M;\nmodelUsage\n| join kind=leftouter latestModelPrices on Model\n| extend PriceStatus = iff(isnull(InputPriceUSDPer1M), \"No priced telemetry yet\", \"Rate used by application\")\n| project Model, PriceStatus, PriceObservedAt, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M, UncachedInputTokens, CachedInputTokens, OutputTokens, TotalTokens, TotalCost, RequestCount\n| order by TotalCost desc",
+        "size": 0,
+        "title": "Model Prices and Usage (USD per 1M tokens)",
+        "noDataMessage": "No model usage exists in the selected time range.",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table",
+        "gridSettings": {
+          "labelSettings": [
+            {
+              "columnId": "InputPriceUSDPer1M",
+              "label": "Input price (USD / 1M)"
+            },
+            {
+              "columnId": "CachedInputPriceUSDPer1M",
+              "label": "Cached input price (USD / 1M)"
+            },
+            {
+              "columnId": "OutputPriceUSDPer1M",
+              "label": "Output price (USD / 1M)"
+            }
+          ]
+        }
+      },
+      "name": "Model Prices and Usage Table"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FinOpsAgentMetrics_CL\n| extend\n    Model = iff(isempty(ModelId_s), \"unknown\", ModelId_s),\n    CachedInputTokens = todouble(column_ifexists(\"CachedInputTokens_d\", 0.0)),\n    InputTokens = todouble(InputTokens_d),\n    OutputTokens = todouble(OutputTokens_d)\n| extend UncachedInputTokens = max_of(InputTokens - CachedInputTokens, 0.0)\n| summarize\n    UncachedInputTokens = sum(UncachedInputTokens),\n    CachedInputTokens = sum(CachedInputTokens),\n    OutputTokens = sum(OutputTokens)\n    by Model\n| extend TotalTokens = UncachedInputTokens + CachedInputTokens + OutputTokens\n| order by TotalTokens desc\n| project-away TotalTokens",
+        "size": 0,
+        "title": "Token Consumption Grouped by Model",
+        "noDataMessage": "No model usage exists in the selected time range.",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart",
+        "chartSettings": {
+          "seriesLabelSettings": [
+            {
+              "seriesName": "UncachedInputTokens",
+              "label": "Input tokens",
+              "color": "blue"
+            },
+            {
+              "seriesName": "CachedInputTokens",
+              "label": "Cached input tokens",
+              "color": "turquoise"
+            },
+            {
+              "seriesName": "OutputTokens",
+              "label": "Output tokens",
+              "color": "magenta"
+            }
+          ]
+        }
+      },
+      "name": "Model Token Consumption Chart"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "FinOpsAgentMetrics_CL\n| extend\n    CachedInputTokens = todouble(column_ifexists(\"CachedInputTokens_d\", 0.0)),\n    InputPriceUSDPer1M = todouble(column_ifexists(\"InputPricePerMillionTokens_d\", real(null))),\n    CachedInputPriceUSDPer1M = todouble(column_ifexists(\"CachedInputPricePerMillionTokens_d\", real(null))),\n    OutputPriceUSDPer1M = todouble(column_ifexists(\"OutputPricePerMillionTokens_d\", real(null)))\n| summarize\n    TotalTokens = sum(TotalTokens_d),\n    InputTokens = sum(InputTokens_d),\n    CachedInputTokens = sum(CachedInputTokens),\n    OutputTokens = sum(OutputTokens_d),\n    TotalCost = sum(EffectiveCost_d),\n    RequestCount = count(),\n    arg_max(TimeGenerated, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M)\n    by UserEmail = iff(isempty(UserEmail_s), \"N/A\", UserEmail_s), Model = ModelId_s\n| project UserEmail, Model, InputPriceUSDPer1M, CachedInputPriceUSDPer1M, OutputPriceUSDPer1M, InputTokens, CachedInputTokens, OutputTokens, TotalTokens, TotalCost, RequestCount\n| order by UserEmail asc, TotalCost desc",
+        "size": 0,
+        "title": "Usage and Cost by User and Model",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "table"
+      },
+      "name": "User and Model Breakdown Table"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let usage = FinOpsAgentMetrics_CL\n| extend\n    Department = iff(isempty(UserDepartment_s), \"N/A\", UserDepartment_s),\n    User = iff(isempty(UserEmail_s), \"N/A\", UserEmail_s),\n    Model = iff(isempty(ModelId_s), \"unknown\", ModelId_s),\n    CachedInputTokens = todouble(column_ifexists(\"CachedInputTokens_d\", 0.0)),\n    InputTokens = todouble(InputTokens_d),\n    OutputTokens = todouble(OutputTokens_d)\n| extend UncachedInputTokens = max_of(InputTokens - CachedInputTokens, 0.0)\n| summarize\n    UncachedInputTokens = sum(UncachedInputTokens),\n    CachedInputTokens = sum(CachedInputTokens),\n    OutputTokens = sum(OutputTokens)\n    by Department, User, Model\n| extend TotalTokens = UncachedInputTokens + CachedInputTokens + OutputTokens;\nlet departmentNodes = usage\n| summarize Tokens = sum(TotalTokens) by Department\n| project Id = strcat(\"department::\", Department), Name = Department, Kind = \"Department\", Tokens;\nlet userNodes = usage\n| summarize Tokens = sum(TotalTokens) by User\n| project Id = strcat(\"user::\", User), Name = User, Kind = \"User\", Tokens;\nlet modelNodes = usage\n| summarize Tokens = sum(TotalTokens) by Model\n| project Id = strcat(\"model::\", Model), Name = Model, Kind = \"Model\", Tokens;\nlet tokenNodes = union\n    (usage | summarize Tokens = sum(UncachedInputTokens) | extend Id = \"token::input\", Name = \"Input tokens\", Kind = \"Token type\"),\n    (usage | summarize Tokens = sum(CachedInputTokens) | extend Id = \"token::cached-input\", Name = \"Cached input tokens\", Kind = \"Token type\"),\n    (usage | summarize Tokens = sum(OutputTokens) | extend Id = \"token::output\", Name = \"Output tokens\", Kind = \"Token type\")\n| where Tokens > 0\n| project Id, Name, Kind, Tokens;\nlet departmentUserEdges = usage\n| summarize Tokens = sum(TotalTokens) by Department, User\n| where Tokens > 0\n| project SourceId = strcat(\"department::\", Department), TargetId = strcat(\"user::\", User), Tokens, EdgeLabel = strcat(tostring(toint(Tokens)), \" tokens\");\nlet userModelEdges = usage\n| summarize Tokens = sum(TotalTokens) by User, Model\n| where Tokens > 0\n| project SourceId = strcat(\"user::\", User), TargetId = strcat(\"model::\", Model), Tokens, EdgeLabel = strcat(tostring(toint(Tokens)), \" tokens\");\nlet modelTokenEdges = union\n    (usage | summarize Tokens = sum(UncachedInputTokens) by Model | extend TargetId = \"token::input\"),\n    (usage | summarize Tokens = sum(CachedInputTokens) by Model | extend TargetId = \"token::cached-input\"),\n    (usage | summarize Tokens = sum(OutputTokens) by Model | extend TargetId = \"token::output\")\n| where Tokens > 0\n| extend SourceId = strcat(\"model::\", Model), EdgeLabel = strcat(tostring(toint(Tokens)), \" tokens\")\n| project SourceId, TargetId, Tokens, EdgeLabel;\ndepartmentNodes\n| union userNodes, modelNodes, tokenNodes, departmentUserEdges, userModelEdges, modelTokenEdges",
+        "size": 3,
+        "title": "Department to User to Model to Token Consumption Flow",
+        "noDataMessage": "No department, user, and model usage exists in the selected time range.",
+        "timeContext": {
+          "durationMs": 604800000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "graph",
+        "graphSettings": {
+          "type": 0,
+          "topContent": {
+            "columnMatch": "Name",
+            "formatter": 1
+          },
+          "centerContent": {
+            "columnMatch": "Tokens",
+            "formatter": 1,
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "style": "decimal",
+                "useGrouping": true,
+                "maximumFractionDigits": 0
+              }
+            }
+          },
+          "bottomContent": {
+            "columnMatch": "Kind",
+            "formatter": 1
+          },
+          "nodeIdField": "Id",
+          "sourceIdField": "SourceId",
+          "targetIdField": "TargetId",
+          "graphOrientation": 2,
+          "showOrientationToggles": true,
+          "edgeSize": "Tokens",
+          "edgeLabel": "EdgeLabel",
+          "nodeSize": null,
+          "staticNodeSize": 110,
+          "colorSettings": {
+            "nodeColorField": "Kind",
+            "type": 1,
+            "colorPalette": "default"
+          },
+          "hivesMargin": 5
+        }
+      },
+      "name": "Department User Model Token Flow Graph"
     }
   ]
 }
