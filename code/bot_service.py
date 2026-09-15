@@ -26,6 +26,7 @@ from utils import get_bot_framework_token
 from user_metadata import extract_user_metadata_from_activity, get_user_info_from_graph, build_user_metadata_dict
 from foundry_agent import call_foundry_agent
 from finops_metrics import create_finops_record, validate_finops_record, send_to_application_insights, log_finops_metrics
+from finops_query import query_agent_usage_by_department, DEFAULT_AGENT_NAME, DEFAULT_LOOKBACK_DAYS
 
 # Load environment
 from dotenv import load_dotenv
@@ -177,6 +178,37 @@ def messages():
         print(f"[ERROR] Failed to send reply: {err}")
 
     return ("", 200)
+
+
+@app.route("/api/departments", methods=["GET"])
+def departments():
+    """
+    Department usage breakdown for a single agent.
+
+    Queries the FinOpsAgentMetrics_CL table in Log Analytics and returns every
+    department that used the agent, with its token consumption, estimated cost,
+    request count and distinct user count, sorted by total tokens descending.
+
+    Query Parameters:
+        agent_name: Exact AgentName_s value, case-sensitive.
+                    Defaults to "super-fun-coding-learn-agent".
+        days: Look-back window in days (1-730). Defaults to 90.
+
+    Returns:
+        JSON with agent_name, days, department_count, totals and a departments
+        list. HTTP 200 on success, 400 on invalid parameters, 502 if the
+        Log Analytics query fails.
+
+    Example:
+        GET /api/departments?agent_name=super-fun-coding-learn-agent&days=90
+    """
+    agent_name = request.args.get("agent_name", DEFAULT_AGENT_NAME)
+    days = request.args.get("days", DEFAULT_LOOKBACK_DAYS)
+
+    print(f"[DEPARTMENTS] GET /api/departments agent_name={agent_name} days={days}")
+
+    payload, status = query_agent_usage_by_department(agent_name=agent_name, days=days)
+    return jsonify(payload), status
 
 
 @app.route("/health", methods=["GET"])

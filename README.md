@@ -7,10 +7,11 @@
 A reference implementation that captures per-user, per-agent token consumption from
 Microsoft Foundry agents, converts it into [FOCUS™ 1.0](https://focus.finops.org/)-compliant
 cost records, and streams it to Azure Log Analytics for reporting, chargeback and alerting —
-then exposes that data back to AI assistants over [MCP](#ask-your-data-in-natural-language),
-so you can ask "who spent the most on this agent last month?" in plain English.
+then reads it back out over a [REST API](#the-rest-api) and
+[MCP](#ask-your-data-in-natural-language), so you can ask "who spent the most on this agent
+last month?" from a script or in plain English.
 
-[Why](#why-this-exists) · [How it works](#architecture) · [Quickstart](#quickstart) · [Queries](#querying-your-data) · [MCP](#ask-your-data-in-natural-language) · [Limits](#known-limitations) · [Roadmap](#roadmap)
+[Why](#why-this-exists) · [How it works](#architecture) · [Quickstart](#quickstart) · [Queries](#querying-your-data) · [REST](#the-rest-api) · [MCP](#ask-your-data-in-natural-language) · [Limits](#known-limitations) · [Roadmap](#roadmap)
 
 </div>
 
@@ -55,7 +56,8 @@ token usage the model reports back, and writes a standards-compliant cost record
   Swap the agent runtime; the pipeline and dashboards keep working.
 - **Actionable, not just observable** — ships with KQL queries, an importable Azure Workbook,
   and anomaly-based alert rules for runaway consumption.
-- **Queryable in natural language** — an MCP server puts the cost data directly in front of
+- **Queryable however you ask** — a REST endpoint on the bot service for scripts and
+  dashboards, and an MCP server that puts the same cost data directly in front of
   Claude, Copilot or any MCP client, so answering a chargeback question does not require
   knowing KQL.
 
@@ -87,6 +89,7 @@ graph LR
     I["🔎 KQL / Ad-hoc"]
     J["🧩 MCP Server<br/><i>Azure Functions</i>"]
     K["💬 AI Assistant<br/><i>Claude, Copilot, …</i>"]
+    L["🌐 REST API<br/><i>GET /api/departments</i>"]
 
     A --> B
     B -->|enrich identity| C
@@ -98,6 +101,7 @@ graph LR
     F --> H
     F --> I
     F -->|KQL over Entra ID| J
+    F -->|KQL over Entra ID| L
     J -->|MCP tools| K
 
     style A fill:#e0e7ff,stroke:#4338ca
@@ -111,11 +115,13 @@ graph LR
     style I fill:#dbeafe,stroke:#1d4ed8
     style J fill:#dbeafe,stroke:#1d4ed8
     style K fill:#e0e7ff,stroke:#4338ca
+    style L fill:#dbeafe,stroke:#1d4ed8
 ```
 
 The left half of the diagram is the **write path** — every Teams message produces one priced,
 validated cost record. The right half is the **read path**: dashboards and alerts for
-scheduled consumption, and the MCP server for ad-hoc questions.
+scheduled consumption, a REST endpoint for scripts and dashboards, and the MCP server for
+ad-hoc questions. The REST API is served by the same Flask app as the bot, on the same port.
 
 > A higher-detail diagram is available at [`images/architecture-diagram.svg`](./images/architecture-diagram.svg).
 
@@ -123,11 +129,12 @@ scheduled consumption, and the MCP server for ad-hoc questions.
 
 | Component | Location | Responsibility |
 |---|---|---|
-| **Bot Service** | [`code/bot_service.py`](./code/bot_service.py) | Flask app on `:3978`. Receives Bot Framework activities, orchestrates the pipeline, replies to Teams. |
+| **Bot Service** | [`code/bot_service.py`](./code/bot_service.py) | Flask app on `:3978`. Receives Bot Framework activities, orchestrates the pipeline, replies to Teams. Also serves the [`/api/departments`](#the-rest-api) read endpoint and `/health`. |
 | **Auth helpers** | [`code/utils.py`](./code/utils.py) | Client-credentials token acquisition for three distinct scopes: Bot Framework, Graph, and Foundry. Decodes the inbound Teams JWT. |
 | **Identity enrichment** | [`code/user_metadata.py`](./code/user_metadata.py) | Extracts the AAD object ID from the activity, then calls Graph `/users/{id}` to resolve department, job title, office and mail. |
 | **Agent client** | [`code/foundry_agent.py`](./code/foundry_agent.py) | Calls the Foundry agent over the OpenAI-compatible Responses protocol and parses `usage` (input / output / reasoning tokens), model, agent version and timings. |
 | **Metrics pipeline** | [`code/finops_metrics.py`](./code/finops_metrics.py) | Builds the FOCUS record, validates it, prices it, and ships it to Log Analytics via the Data Collector API (HMAC-SHA256 signed). |
+| **Metrics queries** | [`code/finops_query.py`](./code/finops_query.py) | The read side of the same table. Runs KQL aggregations over `FinOpsAgentMetrics_CL` via `DefaultAzureCredential` and shapes the rows into JSON for the REST endpoint. |
 | **Data model** | [`finops_data_layer/`](./finops_data_layer/) | `schema.json` (JSON Schema 2020-12, 51 fields, 22 required) plus a typed Python builder and validator. |
 | **Infrastructure** | [`infra/`](./infra/) | Terraform for the resource group, Foundry account + project, `gpt-5-mini` deployment, Log Analytics, Application Insights, Storage, Cosmos DB and AI Search. |
 | **Dashboard** | [`dashboards/finops-dashboard.json`](./dashboards/finops-dashboard.json) | Importable Azure Workbook: tokens by department, trend over time, and a department summary table. |
@@ -207,9 +214,11 @@ the [Roadmap](#roadmap).
 - **DevTunnel** or ngrok, to expose your local bot to the Bot Service
 - An **Azure AD app registration** for the bot with the Graph *Application* permissions
   `User.Read.All` and `Directory.Read.All` (admin consent granted)
-- *Optional, for the [MCP server](#ask-your-data-in-natural-language):*
-  **Azure Functions Core Tools v4** (`func`) and the **Log Analytics Reader** role on the
-  workspace
+- The **Log Analytics Reader** role on the workspace, for the identity you are signed in as —
+  required by both the [REST API](#the-rest-api) and the
+  [MCP server](#ask-your-data-in-natural-language), which read over Entra ID rather than the
+  shared key
+- *Optional, for the MCP server:* **Azure Functions Core Tools v4** (`func`)
 
 ### 1. Deploy the infrastructure
 
@@ -246,6 +255,10 @@ python3.11 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+> **Do not downgrade `botbuilder-core` / `botbuilder-schema` below 4.17.1.** Version 4.14.2
+> hard-pins `msal==1.6.0`, which cannot coexist with `azure-identity` (`msal>=1.30.0`) — the
+> install fails with `ResolutionImpossible`. 4.17.1 relaxes the pin to `msal>=1.31.1`.
+
 Create `code/.env` (git-ignored):
 
 ```dotenv
@@ -268,6 +281,9 @@ az monitor log-analytics workspace get-shared-keys \
 > [`code/foundry_agent.py`](./code/foundry_agent.py) and `LOG_ANALYTICS_WORKSPACE_ID` in
 > [`code/finops_metrics.py`](./code/finops_metrics.py) currently hold the demo deployment's
 > values. Point them at your own project and workspace.
+> [`code/finops_query.py`](./code/finops_query.py) reads the same workspace GUID from a
+> `LOG_ANALYTICS_WORKSPACE_ID` environment variable, falling back to the demo value — add it to
+> `.env` alongside the keys above.
 
 ### 4. Run it
 
@@ -319,6 +335,15 @@ Then in the Log Analytics workspace:
 FinOpsAgentMetrics_CL
 | take 10
 ```
+
+Or read the same data straight back out of the bot service — `az login` first, since this path
+authenticates over Entra ID rather than the shared key:
+
+```bash
+curl -s http://localhost:3978/api/departments | jq '.totals'
+```
+
+See [The REST API](#the-rest-api) for parameters and the full response shape.
 
 ---
 
@@ -383,6 +408,101 @@ Update `fallbackResourceIds` in that file to your own workspace resource ID firs
 
 ---
 
+## The REST API
+
+The department breakdown is also available as a plain HTTP GET on the bot service, so a script,
+a web page or a scheduled job can pull it without a workspace connection or a KQL query.
+
+It is served by the same Flask app as the bot, on the same port, and backed by
+[`code/finops_query.py`](./code/finops_query.py).
+
+### `GET /api/departments`
+
+Returns every department that used a given agent — token consumption, input/output split,
+estimated cost, request count and distinct users — sorted by total tokens descending, plus
+agent-wide totals.
+
+| Parameter | Default | Notes |
+|---|---|---|
+| `agent_name` | `super-fun-coding-learn-agent` | Exact `AgentName_s` value, **case-sensitive**. Restricted to 1–128 characters of letters, digits, spaces, dots, underscores and hyphens: the value is interpolated into the KQL, so anything outside that set is rejected rather than escaped. |
+| `days` | `90` | Look-back window, 1–730. The workspace retains 90 days, so larger windows do not return more data. |
+
+```bash
+curl -s "http://localhost:3978/api/departments?agent_name=super-fun-coding-learn-agent&days=90" | jq
+```
+
+```json
+{
+  "agent_name": "super-fun-coding-learn-agent",
+  "days": 90,
+  "department_count": 5,
+  "departments": [
+    {
+      "Department": "N/A",
+      "InputTokens": 60761,
+      "OutputTokens": 8253,
+      "RequestCount": 14,
+      "TotalCost": 0.57997105,
+      "TotalTokens": 69014,
+      "UniqueUsers": 4
+    }
+  ],
+  "table": "FinOpsAgentMetrics_CL",
+  "totals": {
+    "InputTokens": 169348,
+    "OutputTokens": 20605,
+    "RequestCount": 38,
+    "TotalCost": 1.609469,
+    "TotalTokens": 189953
+  },
+  "workspace_id": "1704fbb7-e360-449c-af0b-ea430a93b9b8"
+}
+```
+
+*(one department shown; the live response carries all five. Flask serialises keys
+alphabetically — `departments` is still sorted by `TotalTokens` descending.)*
+
+| Status | When |
+|---|---|
+| `200` | Query succeeded. An agent with no records still returns `200`, with `department_count: 0` and an explanatory `note`. |
+| `400` | `days` is not a whole number or falls outside 1–730, or `agent_name` failed the character allow-list. |
+| `502` | The Log Analytics query itself failed — see `detail`. |
+
+A `warning` field appears when Log Analytics returns a partial result; the rows it did return
+are still included.
+
+> **Reads use a different credential than writes.** Ingestion signs with
+> `LOG_ANALYTICS_SHARED_KEY`, but `api.loganalytics.io` accepts only Entra ID bearer tokens.
+> This endpoint therefore authenticates with `DefaultAzureCredential` — `az login` locally, a
+> managed identity once hosted — and that identity needs **Log Analytics Reader** on the
+> workspace. A `502` mentioning `DefaultAzureCredential failed to retrieve a token` means you
+> are not signed in; see [Access and configuration](#access-and-configuration) for the role
+> assignment.
+
+### A quick table in the terminal
+
+```bash
+curl -s "http://localhost:3978/api/departments" \
+  | jq -r '["DEPARTMENT","TOKENS","INPUT","OUTPUT","REQS"],
+           (.departments[] | [.Department,.TotalTokens,.InputTokens,.OutputTokens,.RequestCount])
+           | @tsv' \
+  | column -t -s $'\t'
+```
+
+```
+DEPARTMENT     TOKENS  INPUT  OUTPUT  REQS
+N/A            69014   60761  8253    14
+Engineering    39434   34752  4682    7
+IT Operations  37532   34745  2787    8
+Marketing      24517   21713  2804    5
+HR             19456   17377  2079    4
+```
+
+Use `-s $'\t'` rather than the default separator — department names contain spaces, and
+`column -t` alone will split *IT Operations* across two columns.
+
+---
+
 ## Ask your data in natural language
 
 KQL and workbooks answer the questions you thought to build a tile for. The MCP server in
@@ -427,7 +547,8 @@ The SSE transport is available at `/runtime/webhooks/mcp/sse` if your client req
 ### Access and configuration
 
 The server reads from Log Analytics with `DefaultAzureCredential`, so whichever identity you
-are signed in as needs the **Log Analytics Reader** role on the workspace:
+are signed in as needs the **Log Analytics Reader** role on the workspace. The same assignment
+covers the [REST API](#the-rest-api), which reads the same way:
 
 ```bash
 az role assignment create \
@@ -481,11 +602,12 @@ either page constantly for Engineering or never fire for Finance.
 ```
 finops-for-agents/
 ├── code/                          # Bot middleware (Python / Flask)
-│   ├── bot_service.py             # HTTP entry point, request orchestration
+│   ├── bot_service.py             # HTTP entry point, request orchestration, REST read API
 │   ├── utils.py                   # JWT decode + AAD token acquisition per scope
 │   ├── user_metadata.py           # Teams activity + Microsoft Graph enrichment
 │   ├── foundry_agent.py           # Foundry Responses API client, usage parsing
 │   ├── finops_metrics.py          # FOCUS record build, validate, price, ship
+│   ├── finops_query.py            # KQL reads over FinOpsAgentMetrics_CL (Entra ID)
 │   ├── requirements.txt
 │   └── SETUP.md                   # Detailed setup & troubleshooting guide
 ├── finops_data_layer/             # The reusable part
@@ -534,7 +656,9 @@ fixed.
 **Cost is an estimate, not the invoice.** Pricing is hardcoded at `$0.00001/input` and
 `$0.00003/output` in [`code/finops_metrics.py`](./code/finops_metrics.py). It is not per-model,
 it does not price cached or reasoning tokens separately, and nothing reconciles it against the
-actual Cognitive Services bill.
+actual Cognitive Services bill. Every `TotalCost` and `EffectiveCost_d` you see — in the
+workbook, the REST API and the MCP tools — inherits that estimate. Token counts are exact; the
+money is not.
 
 **Ingestion is fire-and-forget.** A failed POST logs and drops the record. Totals are a floor,
 not a guarantee.
@@ -561,6 +685,10 @@ and a production deployment, roughly in priority order.
       which is fine locally and unacceptable in Azure. Deploy it with Functions key or Entra ID
       auth and a managed identity holding **Log Analytics Reader**, rather than the developer's
       own credential.
+- [ ] **Authenticate the REST read API.** `GET /api/departments` is unauthenticated — fine
+      behind `localhost`, not fine once the bot is hosted, since it exposes per-department
+      spend to anyone who can reach the port. Put it behind Entra ID auth or move it off the
+      public Bot Framework listener.
 - [ ] **Replace shared keys with managed identity.** The Data Collector API key should become
       a Managed Identity writing through
       [Log Analytics DCR-based ingestion](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview),
