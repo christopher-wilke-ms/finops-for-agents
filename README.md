@@ -89,7 +89,7 @@ graph LR
     I["🔎 KQL / Ad-hoc"]
     J["🧩 MCP Server<br/><i>Azure Functions</i>"]
     K["💬 AI Assistant<br/><i>Claude, Copilot, …</i>"]
-    L["🌐 REST API<br/><i>GET /api/departments</i>"]
+    L["🌐 REST API<br/><i>departments · billing</i>"]
 
     A --> B
     B -->|enrich identity| C
@@ -129,12 +129,12 @@ ad-hoc questions. The REST API is served by the same Flask app as the bot, on th
 
 | Component | Location | Responsibility |
 |---|---|---|
-| **Bot Service** | [`code/bot_service.py`](./code/bot_service.py) | Flask app on `:3978`. Receives Bot Framework activities, orchestrates the pipeline, replies to Teams. Also serves the [`/api/departments`](#the-rest-api) read endpoint and `/health`. |
+| **Bot Service** | [`code/bot_service.py`](./code/bot_service.py) | Flask app on `:3978`. Receives Bot Framework activities, orchestrates the pipeline, replies to Teams. Also serves the [read endpoints](#the-rest-api) — `/api/departments`, `/api/{agent_name}/billing` — and `/health`. |
 | **Auth helpers** | [`code/utils.py`](./code/utils.py) | Client-credentials token acquisition for three distinct scopes: Bot Framework, Graph, and Foundry. Decodes the inbound Teams JWT. |
 | **Identity enrichment** | [`code/user_metadata.py`](./code/user_metadata.py) | Extracts the AAD object ID from the activity, then calls Graph `/users/{id}` to resolve department, job title, office and mail. |
 | **Agent client** | [`code/foundry_agent.py`](./code/foundry_agent.py) | Calls the Foundry agent over the OpenAI-compatible Responses protocol and parses `usage` (input / output / reasoning tokens), model, agent version and timings. |
 | **Metrics pipeline** | [`code/finops_metrics.py`](./code/finops_metrics.py) | Builds the FOCUS record, validates it, prices it, and ships it to Log Analytics via the Data Collector API (HMAC-SHA256 signed). |
-| **Metrics queries** | [`code/finops_query.py`](./code/finops_query.py) | The read side of the same table. Runs KQL aggregations over `FinOpsAgentMetrics_CL` via `DefaultAzureCredential` and shapes the rows into JSON for the REST endpoint. |
+| **Metrics queries** | [`code/finops_query.py`](./code/finops_query.py) | The read side of the same table. Runs KQL aggregations over `FinOpsAgentMetrics_CL` via `DefaultAzureCredential` and shapes the rows into JSON for the REST endpoints. |
 | **Data model** | [`finops_data_layer/`](./finops_data_layer/) | `schema.json` (JSON Schema 2020-12, 51 fields, 22 required) plus a typed Python builder and validator. |
 | **Infrastructure** | [`infra/`](./infra/) | Terraform for the resource group, Foundry account + project, `gpt-5-mini` deployment, Log Analytics, Application Insights, Storage, Cosmos DB and AI Search. |
 | **Dashboard** | [`dashboards/finops-dashboard.json`](./dashboards/finops-dashboard.json) | Importable Azure Workbook: tokens by department, trend over time, and a department summary table. |
@@ -341,9 +341,10 @@ authenticates over Entra ID rather than the shared key:
 
 ```bash
 curl -s http://localhost:3978/api/departments | jq '.totals'
+curl -s "http://localhost:3978/api/super-fun-coding-learn-agent/billing?department=HR" | jq '.billed_cost'
 ```
 
-See [The REST API](#the-rest-api) for parameters and the full response shape.
+See [The REST API](#the-rest-api) for parameters and the full response shapes.
 
 ---
 
@@ -410,10 +411,14 @@ Update `fallbackResourceIds` in that file to your own workspace resource ID firs
 
 ## The REST API
 
-The department breakdown is also available as a plain HTTP GET on the bot service, so a script,
+The department breakdown is also available as plain HTTP GETs on the bot service, so a script,
 a web page or a scheduled job can pull it without a workspace connection or a KQL query.
 
-It is served by the same Flask app as the bot, on the same port, and backed by
+Two endpoints, same rows, different question: `/api/departments` leads with tokens — *who is
+using this agent?* — and `/api/{agent_name}/billing` leads with cost — *what does each
+department owe?*
+
+Both are served by the same Flask app as the bot, on the same port, and backed by
 [`code/finops_query.py`](./code/finops_query.py).
 
 ### `GET /api/departments`
@@ -468,12 +473,73 @@ alphabetically — `departments` is still sorted by `TotalTokens` descending.)*
 | `400` | `days` is not a whole number or falls outside 1–730, or `agent_name` failed the character allow-list. |
 | `502` | The Log Analytics query itself failed — see `detail`. |
 
-A `warning` field appears when Log Analytics returns a partial result; the rows it did return
-are still included.
+### `GET /api/{agent_name}/billing`
+
+The chargeback view of the same rows: led by cost, with each department's share of the agent's
+spend and its average cost per request. Add `?department=` to bill a single department.
+
+The agent name lives in the path here rather than the query string, so a URL reads as the thing
+it identifies: `/api/super-fun-coding-learn-agent/billing`.
+
+| Parameter | In | Default | Notes |
+|---|---|---|---|
+| `agent_name` | path | — | Exact `AgentName_s` value, **case-sensitive**, same allow-list as above. URL-encode spaces as `%20`. |
+| `department` | query | *all* | Matched **case-insensitively**, so `hr`, `HR` and `Hr` are the same department. Omit it for every department. |
+| `days` | query | `90` | Look-back window, 1–730. |
+
+```bash
+curl -s "http://localhost:3978/api/super-fun-coding-learn-agent/billing?department=HR" | jq
+```
+
+```json
+{
+  "agent_name": "super-fun-coding-learn-agent",
+  "agent_total_cost": 1.609469,
+  "billed_cost": 0.23614,
+  "billing": [
+    {
+      "AvgCostPerRequest": 0.059035,
+      "Cost": 0.23614,
+      "CostShare": 0.1467,
+      "Department": "HR",
+      "InputTokens": 17377,
+      "OutputTokens": 2079,
+      "RequestCount": 4,
+      "TotalTokens": 19456,
+      "UniqueUsers": 1
+    }
+  ],
+  "cost_basis": "Estimate from the hardcoded rates in finops_metrics.py. Not reconciled against the Azure invoice.",
+  "currency": "USD",
+  "days": 90,
+  "department": "HR",
+  "department_count": 1,
+  "table": "FinOpsAgentMetrics_CL",
+  "workspace_id": "1704fbb7-e360-449c-af0b-ea430a93b9b8"
+}
+```
+
+`CostShare` is HR's share of the agent's **whole** spend — 14.67% of `agent_total_cost`, not of
+`billed_cost`. That is deliberate: the department filter is applied after the aggregation, so a
+filtered response still tells you how big that slice is relative to everything the agent spent.
+A share of the filtered rows would always be 100% and answer nothing.
+
+`cost_basis` is not decoration. These figures come from the placeholder rates in
+`finops_metrics.py`, not from your Azure invoice — see
+[Known limitations](#known-limitations) before anyone acts on a number called *billing*.
+
+| Status | When |
+|---|---|
+| `200` | Query succeeded. An unknown department returns `200` with `department_count: 0` and a `note` listing the departments that *do* have usage. |
+| `400` | Same validation as `/api/departments` — bad `days`, or an `agent_name` outside the allow-list. |
+| `502` | The Log Analytics query failed — see `detail`. |
+
+A `warning` field appears on either endpoint when Log Analytics returns a partial result; the
+rows it did return are still included.
 
 > **Reads use a different credential than writes.** Ingestion signs with
 > `LOG_ANALYTICS_SHARED_KEY`, but `api.loganalytics.io` accepts only Entra ID bearer tokens.
-> This endpoint therefore authenticates with `DefaultAzureCredential` — `az login` locally, a
+> These endpoints therefore authenticate with `DefaultAzureCredential` — `az login` locally, a
 > managed identity once hosted — and that identity needs **Log Analytics Reader** on the
 > workspace. A `502` mentioning `DefaultAzureCredential failed to retrieve a token` means you
 > are not signed in; see [Access and configuration](#access-and-configuration) for the role
@@ -500,6 +566,30 @@ HR             19456   17377  2079    4
 
 Use `-s $'\t'` rather than the default separator — department names contain spaces, and
 `column -t` alone will split *IT Operations* across two columns.
+
+The same shape for the billing endpoint, as a chargeback sheet:
+
+```bash
+curl -s "http://localhost:3978/api/super-fun-coding-learn-agent/billing" \
+  | jq -r '["DEPARTMENT","COST","SHARE","PER-REQ","REQS"],
+           (.billing[] | [.Department, .Cost,
+                          ((.CostShare*10000|round)/100|tostring)+"%",
+                          .AvgCostPerRequest, .RequestCount])
+           | @tsv' \
+  | column -t -s $'\t'
+```
+
+```
+DEPARTMENT     COST      SHARE   PER-REQ   REQS
+N/A            0.579971  36.03%  0.041427  14
+Engineering    0.061048  3.79%   0.008721  7
+IT Operations  0.43106   26.78%  0.053882  8
+Marketing      0.30125   18.72%  0.06025   5
+HR             0.23614   14.67%  0.059035  4
+```
+
+The `round` is not cosmetic. `CostShare * 100` on a float gives `3.7900000000000005`, because
+the token counts behind it are stored as doubles — the Data Collector API has no integer type.
 
 ---
 
@@ -685,10 +775,10 @@ and a production deployment, roughly in priority order.
       which is fine locally and unacceptable in Azure. Deploy it with Functions key or Entra ID
       auth and a managed identity holding **Log Analytics Reader**, rather than the developer's
       own credential.
-- [ ] **Authenticate the REST read API.** `GET /api/departments` is unauthenticated — fine
-      behind `localhost`, not fine once the bot is hosted, since it exposes per-department
-      spend to anyone who can reach the port. Put it behind Entra ID auth or move it off the
-      public Bot Framework listener.
+- [ ] **Authenticate the REST read API.** `/api/departments` and `/api/{agent_name}/billing`
+      are unauthenticated — fine behind `localhost`, not fine once the bot is hosted, since
+      they expose per-department spend to anyone who can reach the port. Put them behind
+      Entra ID auth or move them off the public Bot Framework listener.
 - [ ] **Replace shared keys with managed identity.** The Data Collector API key should become
       a Managed Identity writing through
       [Log Analytics DCR-based ingestion](https://learn.microsoft.com/azure/azure-monitor/logs/logs-ingestion-api-overview),

@@ -38,6 +38,7 @@ FINOPS_TABLE = "FinOpsAgentMetrics_CL"
 
 DEFAULT_AGENT_NAME = "super-fun-coding-learn-agent"
 DEFAULT_LOOKBACK_DAYS = 90
+DEFAULT_CURRENCY = "USD"
 
 # Agent names are interpolated into KQL, so constrain them to characters that
 # cannot terminate a string literal or start a new statement.
@@ -179,4 +180,102 @@ def query_agent_usage_by_department(
         result["warning"] = f"Partial result: {response.partial_error}"
 
     print(f"[FINOPSQUERY] Returned {len(departments)} department(s)")
+    return result, 200
+
+
+def query_agent_billing(
+    agent_name: str = DEFAULT_AGENT_NAME,
+    department: Optional[str] = None,
+    days: int = DEFAULT_LOOKBACK_DAYS
+) -> Tuple[Dict[str, Any], int]:
+    """
+    Cost breakdown for a single agent, optionally narrowed to one department.
+
+    The chargeback view of query_agent_usage_by_department: same underlying rows,
+    but led by cost rather than tokens, with each department's share of the agent's
+    spend and its average cost per request.
+
+    Args:
+        agent_name: Exact value of the AgentName_s column (case-sensitive)
+        department: Department to report on, matched case-insensitively.
+                    None or blank returns every department.
+        days: Look-back window in days, counted back from now
+
+    Returns:
+        Tuple of (payload, http_status)
+        - payload: Billing dictionary, or {"error": ..., ...} on failure
+        - http_status: 200 on success, 400 on bad input, 502 on query failure
+
+    Note:
+        The department filter is applied here rather than in KQL. That keeps the
+        value out of the query text entirely, and it lets CostShare stay a share of
+        the agent's whole spend instead of a share of the filtered rows, which would
+        always be 100%.
+    """
+    usage, status = query_agent_usage_by_department(agent_name=agent_name, days=days)
+    if status != 200:
+        return usage, status
+
+    agent_total_cost = usage["totals"]["TotalCost"]
+    rows = usage["departments"]
+
+    wanted = (department or "").strip()
+    if wanted:
+        rows = [
+            row for row in rows
+            if (row.get("Department") or "").casefold() == wanted.casefold()
+        ]
+
+    billing: List[Dict[str, Any]] = []
+    for row in rows:
+        cost = row.get("TotalCost") or 0
+        request_count = row.get("RequestCount") or 0
+        billing.append({
+            "Department": row.get("Department"),
+            "Cost": round(cost, 6),
+            "CostShare": round(cost / agent_total_cost, 4) if agent_total_cost else 0,
+            "AvgCostPerRequest": round(cost / request_count, 6) if request_count else 0,
+            "TotalTokens": row.get("TotalTokens"),
+            "InputTokens": row.get("InputTokens"),
+            "OutputTokens": row.get("OutputTokens"),
+            "RequestCount": request_count,
+            "UniqueUsers": row.get("UniqueUsers"),
+        })
+
+    result: Dict[str, Any] = {
+        "agent_name": agent_name,
+        "department": wanted or None,
+        "days": usage["days"],
+        "currency": DEFAULT_CURRENCY,
+        "workspace_id": LOG_ANALYTICS_WORKSPACE_ID,
+        "table": FINOPS_TABLE,
+        "department_count": len(billing),
+        "billed_cost": round(sum(b["Cost"] for b in billing), 6),
+        "agent_total_cost": agent_total_cost,
+        "cost_basis": (
+            "Estimate from the hardcoded rates in finops_metrics.py. "
+            "Not reconciled against the Azure invoice."
+        ),
+        "billing": billing,
+    }
+
+    if wanted and not billing:
+        known = sorted(
+            {row.get("Department") or "" for row in usage["departments"]}
+        )
+        result["note"] = (
+            f"No records for department '{wanted}' on agent '{agent_name}' in the "
+            f"last {usage['days']} days. "
+            f"Departments with usage: {', '.join(known) if known else 'none'}."
+        )
+    elif "note" in usage:
+        result["note"] = usage["note"]
+
+    if "warning" in usage:
+        result["warning"] = usage["warning"]
+
+    print(
+        f"[FINOPSQUERY] Billing for agent={agent_name} "
+        f"department={wanted or 'all'}: {len(billing)} row(s)"
+    )
     return result, 200
