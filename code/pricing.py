@@ -10,6 +10,9 @@ import time
 from typing import NamedTuple
 
 import requests
+from dotenv import load_dotenv
+
+load_dotenv()
 
 PRICING_API = "https://prices.azure.com/api/retail/prices"
 PRICING_API_VERSION = "2023-01-01-preview"
