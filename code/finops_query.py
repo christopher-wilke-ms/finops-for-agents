@@ -132,7 +132,6 @@ def query_agent_usage_by_department(
         print(f"[ERROR] Log Analytics query failed: {err}")
         return {
             "error": "Log Analytics query failed.",
-            "detail": str(err),
             "workspace_id": LOG_ANALYTICS_WORKSPACE_ID,
         }, 502
 
@@ -140,7 +139,6 @@ def query_agent_usage_by_department(
         print(f"[ERROR] Log Analytics returned a failure: {response.partial_error}")
         return {
             "error": "Log Analytics returned a query failure.",
-            "detail": str(response.partial_error or "unknown"),
         }, 502
 
     # A PARTIAL result still carries usable rows on response.partial_data.
@@ -177,7 +175,7 @@ def query_agent_usage_by_department(
             "Check the agent name spelling and that ingestion is running."
         )
     if response.status == LogsQueryStatus.PARTIAL:
-        result["warning"] = f"Partial result: {response.partial_error}"
+        result["warning"] = "Partial result from Log Analytics."
 
     print(f"[FINOPSQUERY] Returned {len(departments)} department(s)")
     return result, 200
