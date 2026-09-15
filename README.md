@@ -165,7 +165,7 @@ logged and dropped rather than silently corrupting the dataset.
 
 ### What actually lands in Log Analytics
 
-> **The FOCUS record and the Log Analytics table are not the same shape.** The record has 51
+> **The FOCUS record and the Log Analytics table are not the same shape.** The record has 55
 > fields; the ingestion payload in
 > [`code/finops_metrics.py`](./code/finops_metrics.py) projects a subset of them. Query the
 > columns below — the other FOCUS fields exist in the record but never reach the workspace.
