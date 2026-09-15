@@ -1,10 +1,14 @@
 Flask==3.0.0
-botbuilder-core==4.14.2
-botbuilder-schema==4.14.2
+# botbuilder 4.17.x is required: 4.14.2 hard-pins msal==1.6.0, which cannot
+# coexist with azure-identity (msal>=1.30.0). 4.17.1 relaxes it to msal>=1.31.1.
+botbuilder-core==4.17.1
+botbuilder-schema==4.17.1
 aiohttp==3.9.1
 python-dotenv==1.0.0
 requests==2.25.1
 jsonschema==4.19.0
 azure-monitor-opentelemetry==1.1.0
+azure-identity==1.19.0
+azure-monitor-query==1.4.0
 
 
