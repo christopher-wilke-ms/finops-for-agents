@@ -18,7 +18,7 @@ from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
 from dotenv import load_dotenv
 
-from pricing import get_token_prices
+from pricing import REGION, get_token_prices
 
 load_dotenv()
 
@@ -140,8 +140,8 @@ def create_finops_record(
             tags={"source": "teams_agent", "version": "1.0"},
             interaction_type="Chat Message",
             channel="Microsoft Teams",
-            region_id="swedencentral",
-            region_name="Sweden Central"
+            region_id=REGION,
+            region_name=REGION
         )
 
         return record.to_dict()
