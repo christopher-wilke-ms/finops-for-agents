@@ -301,6 +301,12 @@ def create_from_foundry_response(
         FinOpsAgentMetrics record
     """
     from datetime import datetime
+    import sys
+
+    code_dir = Path(__file__).resolve().parent.parent / "code"
+    if str(code_dir) not in sys.path:
+        sys.path.insert(0, str(code_dir))
+    from pricing import get_token_prices
 
     # Extract timestamps
     created_at = foundry_response.get("created_at")
@@ -326,7 +332,11 @@ def create_from_foundry_response(
     usage = foundry_response.get("usage", {})
     input_tokens = usage.get("input_tokens", 0)
     output_tokens = usage.get("output_tokens", 0)
+    cached_input_tokens = 0
     reasoning_tokens = None
+
+    if "input_tokens_details" in usage:
+        cached_input_tokens = usage["input_tokens_details"].get("cached_tokens", 0)
 
     if "output_tokens_details" in usage:
         reasoning_tokens = usage["output_tokens_details"].get("reasoning_tokens")
@@ -338,11 +348,14 @@ def create_from_foundry_response(
     agent_name = agent_ref.get("name", "unknown")
     agent_version = agent_ref.get("version", "unknown")
 
-    # Calculate cost (placeholder - requires pricing config)
-    # For now, we'll estimate based on token counts
-    input_price = 0.00001  # $0.00001 per input token (example)
-    output_price = 0.00003  # $0.00003 per output token (example)
-    estimated_cost = (input_tokens * input_price) + (output_tokens * output_price)
+    model_id = foundry_response.get("model", "unknown")
+    prices = get_token_prices(model_id)
+    uncached_input_tokens = max(input_tokens - cached_input_tokens, 0)
+    estimated_cost = (
+        (uncached_input_tokens * prices.input)
+        + (cached_input_tokens * prices.cached_input)
+        + (output_tokens * prices.output)
+    )
 
     # Now create billing period dates (current month)
     now = datetime.now()
@@ -363,13 +376,13 @@ def create_from_foundry_response(
         service_category="AI Services",
         service_name="Microsoft Foundry",
         service_subcategory="AI Agents",
-        sku_id=foundry_response.get("model", "unknown"),
+        sku_id=model_id,
         sku_meter_name="Token Processing",
         resource_id=agent_name,
         resource_name=agent_name,
         resource_type="AI Agent",
         list_cost=estimated_cost,
-        list_unit_price=output_price,
+        list_unit_price=prices.output,
         effective_cost=estimated_cost,
         billed_cost=estimated_cost,
         consumed_quantity=total_tokens,
@@ -383,11 +396,15 @@ def create_from_foundry_response(
         agent_id=agent_name,
         agent_name=agent_name,
         agent_version=str(agent_version),
-        model_id=foundry_response.get("model", "unknown"),
-        model_name=f"GPT Model ({foundry_response.get('model', 'unknown')})",
+        model_id=model_id,
+        model_name=f"GPT Model ({model_id})",
         model_family="OpenAI",
+        input_price_per_million_tokens=prices.input * 1_000_000,
+        cached_input_price_per_million_tokens=prices.cached_input * 1_000_000,
+        output_price_per_million_tokens=prices.output * 1_000_000,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
+        cached_input_tokens=cached_input_tokens,
         reasoning_tokens=reasoning_tokens,
         total_tokens=total_tokens,
         tokens_per_second=total_tokens / processing_time if processing_time > 0 else 0,
