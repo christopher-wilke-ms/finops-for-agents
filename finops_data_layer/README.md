@@ -99,6 +99,14 @@ The FinOps for Agents schema is based on **FOCUS 1.0** with agent-specific exten
 | `x_ModelName` | String | Display name of the AI model | `GPT-5 Mini` |
 | `x_ModelFamily` | String | Family or class of the model | `OpenAI` |
 
+#### Model Pricing Dimensions (FOCUS Extension)
+
+| Column Name | Data Type | Description | Example |
+|------------|-----------|-------------|---------|
+| `x_InputPricePerMillionTokens` | Decimal | Input price in `BillingCurrency` per one million tokens | `0.25` |
+| `x_CachedInputPricePerMillionTokens` | Decimal | Cached input price in `BillingCurrency` per one million tokens | `0.025` |
+| `x_OutputPricePerMillionTokens` | Decimal | Output price in `BillingCurrency` per one million tokens | `2.00` |
+
 #### Token & Usage Dimensions (FOCUS Extension)
 
 | Column Name | Data Type | Description | Example |
@@ -178,6 +186,9 @@ Example of a complete FinOps for Agents record in JSON format:
   "x_ModelId": "gpt-5-mini",
   "x_ModelName": "GPT-5 Mini",
   "x_ModelFamily": "OpenAI",
+  "x_InputPricePerMillionTokens": 0.25,
+  "x_CachedInputPricePerMillionTokens": 0.025,
+  "x_OutputPricePerMillionTokens": 2.0,
   "x_InputTokens": 4339,
   "x_OutputTokens": 477,
   "x_ReasoningTokens": 128,
