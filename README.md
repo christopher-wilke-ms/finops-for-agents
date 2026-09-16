@@ -17,7 +17,7 @@ last month?" from a script or in plain English.
 
 ---
 
-![Token Consumption by Department](./images/tokens_by_department.png)
+![Architecture Diagram](./images/FinOps_for_agents_Architecture_Diagram.png)
 
 <sub>*Live token consumption per department for a single Foundry agent. Every bar is real usage attributed back to a cost centre — the basis for showback, chargeback and optimisation.*</sub>
 
